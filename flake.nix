@@ -21,6 +21,7 @@
               go
               gopls
             ];
+            CGO_ENABLED = 0;
           };
       }
     );
