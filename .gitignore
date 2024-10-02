@@ -1,3 +1,5 @@
 # nix direnv
 .envrc
 .direnv
+
+main
