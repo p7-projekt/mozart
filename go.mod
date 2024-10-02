@@ -1,4 +1,4 @@
-module haskell-container-service
+module mozart
 
 go 1.22
 
