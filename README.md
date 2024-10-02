@@ -1,1 +1,11 @@
-test with `curl -X POST -H "Content-Type: application/json" -d '{"testCases": "some_random_string", "solution": "another_random_string"}' localhost:8080/task`
+# Docker
+
+To build image:
+```
+docker build -t ghc-instance .
+```
+
+To run the container:
+```
+docker run -p 8080:8080 -d ghc-instance
+```
