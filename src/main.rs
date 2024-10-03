@@ -50,23 +50,14 @@ async fn main() {
 // 9. construct task response
 async fn check(Json(task): Json<Task>) -> impl IntoResponse {
     let task_id = Uuid::new_v4();
-    let path = PathBuf::from(format!("/tmp/{task_id}"));
-    println!("UUID: {}", path.display());
+    let unique_temp_dir_path = PathBuf::from(format!("/tmp/{task_id}"));
 
-    if create_dir(path.as_path()).is_err() {
+    if create_dir(unique_temp_dir_path.as_path()).is_err() {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             String::from("could not create unique directory"),
         );
     }
-
-    let Some(str_path) = path.as_path().to_str() else {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            String::from("could not get path as str"),
-        );
-    };
-    let mut haskell_code = HASKELL.replace("UUID_PATH", str_path);
 
     let (solution, test_cases) = task.into_inner();
     let haskell_test_cases = test_cases
@@ -75,28 +66,31 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
         .collect::<Box<[String]>>()
         .join("\n");
 
-    haskell_code = haskell_code.replace("TEST_CASES", haskell_test_cases.as_ref());
-    haskell_code.push_str(solution.as_ref());
+    let haskell_output_file_prefix = unique_temp_dir_path.to_string_lossy().to_string();
+    let mut haskell_code = HASKELL
+        .replace("UUID_PATH", haskell_output_file_prefix.as_str())
+        .replace("TEST_CASES", haskell_test_cases.as_str());
+    haskell_code.push_str(solution.as_str());
 
-    println!("{haskell_code}");
-
-    let test_file_path = PathBuf::from(format!("{}/Test.hs", path.display()));
+    let test_file_path = PathBuf::from(format!("{}/Test.hs", unique_temp_dir_path.display()));
     let mut test_file = match File::create_new(test_file_path.clone()) {
         Ok(f) => f,
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, String::new()),
     };
 
-    if test_file.write(haskell_code.as_bytes()).is_err() {
+    if test_file.write_all(haskell_code.as_bytes()).is_err() {
         return (StatusCode::INTERNAL_SERVER_ERROR, String::new());
     }
 
-    let executable = PathBuf::from(format!("{}/test", path.display()));
+    let executable_binary_path = PathBuf::from(format!("{}/test", unique_temp_dir_path.display()));
+    let executable_binary_path_string = executable_binary_path.to_string_lossy().to_string();
+    let test_file_path_string = test_file_path.to_string_lossy().to_string();
     let compilation = Command::new("ghc")
         .args([
-            "-O2",                            // highest level of safe optimization
-            "-o",                             // set output executable name
-            executable.to_str().unwrap(),     // name of the output executeable
-            test_file_path.to_str().unwrap(), // the source program
+            "-O2",                                  // highest level of safe optimization
+            "-o",                                   // set output executable name
+            executable_binary_path_string.as_str(), // name of the output executeable
+            test_file_path_string.as_str(),         // the source program
         ])
         .output();
 
@@ -105,26 +99,22 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
 
-    println!("stdout: {}", String::from_utf8(compilation.stdout).unwrap());
-    println!("stderr: {}", String::from_utf8(compilation.stderr).unwrap());
-
-    let execution = Command::new(executable).output();
+    let execution = Command::new(executable_binary_path).output();
     let execution = match execution {
         Ok(o) => o,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
-    println!("stdout: {}", String::from_utf8(execution.stdout).unwrap());
-    println!("stderr: {}", String::from_utf8(execution.stderr).unwrap());
 
-    let output_file_path = PathBuf::from(format!("{}/output", path.display()));
-    let Ok(output_file_content) = read_to_string(output_file_path) else {
+    let test_case_results_file_path =
+        PathBuf::from(format!("{}/output", unique_temp_dir_path.display()));
+    let Ok(output_file_content) = read_to_string(test_case_results_file_path) else {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             String::from("could not read output file"),
         );
     };
 
-    if let Err(err) = remove_dir_all(path.as_path()) {
+    if let Err(err) = remove_dir_all(unique_temp_dir_path.as_path()) {
         return (StatusCode::INTERNAL_SERVER_ERROR, err.to_string());
     }
 
