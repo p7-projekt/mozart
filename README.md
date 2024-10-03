@@ -1,3 +1,5 @@
+Look in the justfile for specific commands, alternatively look below - although below may be outdated.
+
 # Docker
 
 To build image:
