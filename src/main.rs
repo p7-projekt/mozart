@@ -1,5 +1,6 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::post, serve, Json, Router};
+use axum::{routing::post, serve, Json, Router};
 use model::Task;
+use response::CheckResponse;
 use std::{
     fs::{create_dir, read_to_string, remove_dir_all, File},
     io::Write,
@@ -10,6 +11,7 @@ use tokio::net::TcpListener;
 use uuid::Uuid;
 
 mod model;
+mod response;
 
 const HASKELL: &str = r###"
 main = do
@@ -47,16 +49,13 @@ async fn main() {
 // 6. execute compiled haskell program +
 // 7. read test case output from output file +
 // 8. clean up temporary task directory +
-// 9. construct task response
-async fn check(Json(task): Json<Task>) -> impl IntoResponse {
+// 9. construct task response +
+async fn check(Json(task): Json<Task>) -> CheckResponse {
     let task_id = Uuid::new_v4();
     let unique_temp_dir_path = PathBuf::from(format!("/tmp/{task_id}"));
 
     if create_dir(unique_temp_dir_path.as_path()).is_err() {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            String::from("could not create unique directory"),
-        );
+        return CheckResponse::Error("".to_string());
     }
 
     let (solution, test_cases) = task.into_inner();
@@ -75,11 +74,11 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
     let test_file_path = PathBuf::from(format!("{}/Test.hs", unique_temp_dir_path.display()));
     let mut test_file = match File::create_new(test_file_path.clone()) {
         Ok(f) => f,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, String::new()),
+        Err(_) => return CheckResponse::Error("".to_string()),
     };
 
     if test_file.write_all(haskell_code.as_bytes()).is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, String::new());
+        return CheckResponse::Error("".to_string());
     }
 
     let executable_binary_path = PathBuf::from(format!("{}/test", unique_temp_dir_path.display()));
@@ -96,29 +95,26 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
 
     let compilation = match compilation {
         Ok(o) => o,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        Err(e) => return CheckResponse::Error("".to_string()),
     };
 
     let execution = Command::new(executable_binary_path).output();
     let execution = match execution {
         Ok(o) => o,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        Err(e) => return CheckResponse::Error("".to_string()),
     };
 
     let test_case_results_file_path =
         PathBuf::from(format!("{}/output", unique_temp_dir_path.display()));
     let Ok(output_file_content) = read_to_string(test_case_results_file_path) else {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            String::from("could not read output file"),
-        );
+        return CheckResponse::Error("".to_string());
     };
 
     if let Err(err) = remove_dir_all(unique_temp_dir_path.as_path()) {
-        return (StatusCode::INTERNAL_SERVER_ERROR, err.to_string());
+        return CheckResponse::Error("".to_string());
     }
 
-    (StatusCode::OK, output_file_content)
+    CheckResponse::Success
 }
 
 // #[cfg(test)]

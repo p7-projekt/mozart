@@ -49,24 +49,10 @@ pub struct Parameter {
     value: String,
 }
 
-// #[derive(Deserialize)]
-// pub struct Response {
-//     status: Status,
-//     message: String,
-//     test_case_results: Box<[TestCaseResult]>,
-// }
-
 #[derive(Serialize)]
 pub struct TestCaseResult {
     id: u64,
     test_result: TestResult,
-}
-
-#[derive(Serialize)]
-pub enum Response {
-    Success,
-    Failure(Box<[TestCaseResult]>),
-    Error(String),
 }
 
 #[derive(Serialize)]
