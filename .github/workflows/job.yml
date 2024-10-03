@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Release build
+    name: Release Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -66,7 +66,7 @@ jobs:
         run: cargo fmt --all --check
 
   clippy:
-    name: Clippy lints
+    name: Clippy Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -84,3 +84,13 @@ jobs:
 
       - name: Run clippy linter
         run: cargo clippy --tests -- -W clippy::all
+
+  docker:
+    name: Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t mozart .
