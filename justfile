@@ -7,3 +7,9 @@ run:
 
 test:
     cargo test -q
+
+dbuild:
+    docker build -t mozart
+
+drun:
+    docker run -p 8080:8080 -d mozart
