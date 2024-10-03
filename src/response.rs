@@ -13,17 +13,17 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub enum CheckResponse {
     Success,
-    Error(String),
     Failure(FailureReason),
+    Error,
 }
 
 impl IntoResponse for CheckResponse {
     fn into_response(self) -> Response {
         match self {
-            CheckResponse::Error(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, Body::from(msg)).into_response()
             CheckResponse::Success => (StatusCode::OK, Body::empty()).into_response(),
             CheckResponse::Failure(reason) => (StatusCode::OK, Json::from(reason)).into_response(),
+            CheckResponse::Error => {
+                (StatusCode::INTERNAL_SERVER_ERROR, Body::empty()).into_response()
             }
         }
     }
