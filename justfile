@@ -12,7 +12,7 @@ test:
 
 # Build the mozart image
 dbuild:
-    docker build -t mozart
+    docker build -t mozart .
 
 # Runs the mozart container
 drun:
