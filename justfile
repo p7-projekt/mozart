@@ -8,7 +8,7 @@ run:
 
 # Run test cases
 test:
-    cargo test -q
+    cargo test -q --target=x86_64-unknown-linux-musl
 
 # Build the mozart image
 dbuild:
