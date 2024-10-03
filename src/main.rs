@@ -54,10 +54,19 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
     println!("UUID: {}", path.display());
 
     if create_dir(path.as_path()).is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, String::new());
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("could not create unique directory"),
+        );
     }
 
-    let mut haskell_code = HASKELL.replace("UUID_PATH", path.as_path().to_str().unwrap());
+    let Some(str_path) = path.as_path().to_str() else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("could not get path as str"),
+        );
+    };
+    let mut haskell_code = HASKELL.replace("UUID_PATH", str_path);
 
     let (solution, test_cases) = task.into_inner();
     let haskell_test_cases = test_cases
@@ -89,25 +98,95 @@ async fn check(Json(task): Json<Task>) -> impl IntoResponse {
             executable.to_str().unwrap(),     // name of the output executeable
             test_file_path.to_str().unwrap(), // the source program
         ])
-        .output()
-        .expect("failed to compile the thing");
+        .output();
+
+    let compilation = match compilation {
+        Ok(o) => o,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    };
 
     println!("stdout: {}", String::from_utf8(compilation.stdout).unwrap());
     println!("stderr: {}", String::from_utf8(compilation.stderr).unwrap());
 
-    let execution = Command::new(executable)
-        .output()
-        .expect("failed to run the thing");
-
+    let execution = Command::new(executable).output();
+    let execution = match execution {
+        Ok(o) => o,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    };
     println!("stdout: {}", String::from_utf8(execution.stdout).unwrap());
     println!("stderr: {}", String::from_utf8(execution.stderr).unwrap());
 
     let output_file_path = PathBuf::from(format!("{}/output", path.display()));
-    let output_file_content = read_to_string(output_file_path).expect("failed to read the filer");
+    let Ok(output_file_content) = read_to_string(output_file_path) else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            String::from("could not read output file"),
+        );
+    };
 
-    if remove_dir_all(path.as_path()).is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, String::new());
+    if let Err(err) = remove_dir_all(path.as_path()) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, err.to_string());
     }
 
     (StatusCode::OK, output_file_content)
 }
+
+// #[cfg(test)]
+// mod requests {
+//     use crate::app;
+//     use axum::http::{Method, Request, StatusCode};
+//     use tower::ServiceExt;
+
+//     #[tokio::test]
+//     async fn content_type_not_set_to_json() {
+//         let mozart = app();
+//         let request = Request::builder()
+//             .method(Method::POST)
+//             .uri("/check")
+//             .body(String::new())
+//             .expect("failed to create request");
+
+//         let response = mozart
+//             .oneshot(request)
+//             .await
+//             .expect("failed to oneshot request");
+
+//         assert_eq!(response.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+//     }
+
+//     #[tokio::test]
+//     async fn content_type_is_json_but_body_is_empty() {
+//         let mozart = app();
+//         let request = Request::builder()
+//             .method(Method::POST)
+//             .uri("/check")
+//             .header("Content-Type", "application/json")
+//             .body(String::new())
+//             .expect("failed to create request");
+
+//         let response = mozart
+//             .oneshot(request)
+//             .await
+//             .expect("failed to oneshot request");
+
+//         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+//     }
+
+//     #[tokio::test]
+//     async fn content_type_is_json_body_is_ill_formed() {
+//         let mozart = app();
+//         let request = Request::builder()
+//             .method(Method::POST)
+//             .uri("/check")
+//             .header("Content-Type", "application/json")
+//             .body(String::from("}"))
+//             .expect("failed to create request");
+
+//         let response = mozart
+//             .oneshot(request)
+//             .await
+//             .expect("failed to oneshot request");
+
+//         assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+//     }
+// }
