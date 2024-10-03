@@ -60,7 +60,7 @@ pub enum TestResult {
     Pass,
     Unknown,
     Failure {
-        reason: Reason,
+        reason: TestCaseFailureReason,
         input_parameters: Box<[Parameter]>,
         actual: String,
         expected: String,
@@ -68,7 +68,7 @@ pub enum TestResult {
 }
 
 #[derive(Serialize)]
-pub enum Reason {
+pub enum TestCaseFailureReason {
     WrongAnswer,
     RuntimeError,
 }
