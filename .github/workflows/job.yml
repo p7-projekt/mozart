@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Release build
+    name: Release Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -66,7 +66,7 @@ jobs:
         run: cargo fmt --all --check
 
   clippy:
-    name: Clippy lints
+    name: Clippy Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
