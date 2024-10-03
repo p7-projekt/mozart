@@ -29,7 +29,7 @@ fn app() -> Router {
 #[tokio::main]
 async fn main() {
     let mozart = app();
-    let listener = TcpListener::bind("127.0.0.1:8080")
+    let listener = TcpListener::bind("0.0.0.0:8080")
         .await
         .expect("failed to bind to localhost:8080");
     serve(listener, mozart)
