@@ -12,8 +12,13 @@ use serde::Serialize;
 /// Therefore, this also represents a response to a solution that was submitted for testing.
 #[derive(Serialize)]
 pub enum CheckResponse {
+    /// A submission compiled without errors and passed all test cases.
     Success,
+
+    /// A submission was not accepted due to the underlying [`FailureReason`].
     Failure(FailureReason),
+
+    /// An internal server error occurred during handling of the solution testing.
     Error,
 }
 
@@ -29,8 +34,12 @@ impl IntoResponse for CheckResponse {
     }
 }
 
+/// The reason why a submission was not accepted.
 #[derive(Serialize)]
 pub enum FailureReason {
+    /// The submission produced an incorrect output in one or more test cases.
     IncorrectSolution(Box<[TestCaseResult]>),
+
+    /// The submission could not be compiled.
     CompilationError(String),
 }
