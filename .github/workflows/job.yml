@@ -84,3 +84,13 @@ jobs:
 
       - name: Run clippy linter
         run: cargo clippy --tests -- -W clippy::all
+
+  docker:
+    name: Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t mozart .
