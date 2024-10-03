@@ -55,7 +55,7 @@ async fn check(Json(task): Json<Task>) -> CheckResponse {
     let unique_temp_dir_path = PathBuf::from(format!("/tmp/{task_id}"));
 
     if create_dir(unique_temp_dir_path.as_path()).is_err() {
-        return CheckResponse::Error("".to_string());
+        return CheckResponse::Error;
     }
 
     let (solution, test_cases) = task.into_inner();
@@ -74,11 +74,11 @@ async fn check(Json(task): Json<Task>) -> CheckResponse {
     let test_file_path = PathBuf::from(format!("{}/Test.hs", unique_temp_dir_path.display()));
     let mut test_file = match File::create_new(test_file_path.clone()) {
         Ok(f) => f,
-        Err(_) => return CheckResponse::Error("".to_string()),
+        Err(_) => return CheckResponse::Error,
     };
 
     if test_file.write_all(haskell_code.as_bytes()).is_err() {
-        return CheckResponse::Error("".to_string());
+        return CheckResponse::Error;
     }
 
     let executable_binary_path = PathBuf::from(format!("{}/test", unique_temp_dir_path.display()));
@@ -95,23 +95,23 @@ async fn check(Json(task): Json<Task>) -> CheckResponse {
 
     let compilation = match compilation {
         Ok(o) => o,
-        Err(e) => return CheckResponse::Error("".to_string()),
+        Err(e) => return CheckResponse::Error,
     };
 
     let execution = Command::new(executable_binary_path).output();
     let execution = match execution {
         Ok(o) => o,
-        Err(e) => return CheckResponse::Error("".to_string()),
+        Err(e) => return CheckResponse::Error,
     };
 
     let test_case_results_file_path =
         PathBuf::from(format!("{}/output", unique_temp_dir_path.display()));
     let Ok(output_file_content) = read_to_string(test_case_results_file_path) else {
-        return CheckResponse::Error("".to_string());
+        return CheckResponse::Error;
     };
 
     if let Err(err) = remove_dir_all(unique_temp_dir_path.as_path()) {
-        return CheckResponse::Error("".to_string());
+        return CheckResponse::Error;
     }
 
     CheckResponse::Success
