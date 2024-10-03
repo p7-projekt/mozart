@@ -13,8 +13,8 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub enum CheckResponse {
     Success,
-    Failure(Box<[TestCaseResult]>),
     Error(String),
+    Failure(FailureReason),
 }
 
 impl IntoResponse for CheckResponse {
@@ -25,12 +25,16 @@ impl IntoResponse for CheckResponse {
                 .header("Content-Length", 0)
                 .body(Body::empty())
                 .expect(""),
-            CheckResponse::Failure(test_cases) => {
-                (StatusCode::OK, Json::from(test_cases)).into_response()
-            }
             CheckResponse::Error(msg) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, Body::from(msg)).into_response()
+            CheckResponse::Failure(reason) => (StatusCode::OK, Json::from(reason)).into_response(),
             }
         }
     }
+}
+
+#[derive(Serialize)]
+pub enum FailureReason {
+    IncorrectSolution(Box<[TestCaseResult]>),
+    CompilationError(String),
 }
