@@ -2,4 +2,6 @@
 .envrc
 .direnv
 
-main
+# Added by cargo
+
+/target
