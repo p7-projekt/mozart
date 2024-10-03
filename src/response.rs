@@ -20,13 +20,9 @@ pub enum CheckResponse {
 impl IntoResponse for CheckResponse {
     fn into_response(self) -> Response {
         match self {
-            CheckResponse::Success => Response::builder()
-                .status(StatusCode::OK)
-                .header("Content-Length", 0)
-                .body(Body::empty())
-                .expect(""),
             CheckResponse::Error(msg) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, Body::from(msg)).into_response()
+            CheckResponse::Success => (StatusCode::OK, Body::empty()).into_response(),
             CheckResponse::Failure(reason) => (StatusCode::OK, Json::from(reason)).into_response(),
             }
         }
