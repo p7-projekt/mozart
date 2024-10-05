@@ -11,9 +11,9 @@ test:
     cargo test -q --target=x86_64-unknown-linux-musl
 
 # Build the mozart image
-dbuild:
-    docker build -t mozart .
+dbuild TARGET:
+    docker build . -t {{TARGET}} -f docker/{{TARGET}}
 
 # Runs the mozart container
-drun:
-    docker run -p 8080:8080 -d mozart
+drun TARGET:
+    docker run -p 8080:8080 -d {{TARGET}}
