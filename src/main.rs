@@ -1,4 +1,9 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::post, serve, Json, Router};
+use axum::{
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    serve, Json, Router,
+};
 use model::Task;
 use tokio::net::TcpListener;
 
@@ -16,7 +21,9 @@ testChecker actual expected = do
 "###;
 
 fn app() -> Router {
-    Router::new().route("/check", post(check))
+    Router::new()
+        .route("/check", post(check))
+        .route("/status", get(status))
 }
 
 #[tokio::main]
@@ -28,6 +35,10 @@ async fn main() {
     serve(listener, mozart)
         .await
         .expect("failed to start mozart");
+}
+
+async fn status() -> StatusCode {
+    StatusCode::OK
 }
 
 // 0. Decode incoming json body +
@@ -43,4 +54,71 @@ async fn main() {
 // 9. construct task response +
 async fn check(Json(task): Json<Task>) -> impl IntoResponse {
     StatusCode::OK
+}
+
+#[cfg(test)]
+mod endpoints {
+    mod status {
+        use crate::app;
+        use axum::{
+            body::{Body, HttpBody},
+            http::{request::Builder, Method, StatusCode},
+        };
+        use tower::ServiceExt;
+
+        #[tokio::test]
+        async fn invalid_http_method() {
+            let mozart = app();
+            let expected_status_code = StatusCode::METHOD_NOT_ALLOWED;
+            let request = Builder::new()
+                .method(Method::POST)
+                .uri("/status")
+                .body(Body::empty())
+                .expect("failed to build request");
+
+            let actual = mozart
+                .oneshot(request)
+                .await
+                .expect("failed to await oneshot");
+
+            assert_eq!(actual.status(), expected_status_code);
+        }
+
+        #[tokio::test]
+        async fn body_content_does_not_affect_request() {
+            let mozart = app();
+            let expected_status_code = StatusCode::OK;
+            let request = Builder::new()
+                .method(Method::GET)
+                .uri("/status")
+                .body(Body::from("Hello, world!"))
+                .expect("failed to build request");
+
+            let actual = mozart
+                .oneshot(request)
+                .await
+                .expect("failed to await oneshot");
+
+            assert_eq!(actual.status(), expected_status_code);
+        }
+
+        #[tokio::test]
+        async fn valid() {
+            let mozart = app();
+            let expected_status_code = StatusCode::OK;
+            let request = Builder::new()
+                .method(Method::GET)
+                .uri("/status")
+                .body(Body::empty())
+                .expect("failed to build request");
+
+            let actual = mozart
+                .oneshot(request)
+                .await
+                .expect("failed to await oneshot");
+
+            assert_eq!(actual.status(), expected_status_code);
+            assert!(actual.body().is_end_stream());
+        }
+    }
 }
