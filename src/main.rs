@@ -22,7 +22,7 @@ testChecker actual expected = do
 
 fn app() -> Router {
     Router::new()
-        .route("/check", post(check))
+        .route("/submit", post(check))
         .route("/status", get(status))
 }
 
@@ -52,7 +52,7 @@ async fn status() -> StatusCode {
 // 7. read test case output from output file +
 // 8. clean up temporary task directory +
 // 9. construct task response +
-async fn check(Json(task): Json<Task>) -> impl IntoResponse {
+async fn submit(Json(task): Json<Task>) -> impl IntoResponse {
     StatusCode::OK
 }
 
