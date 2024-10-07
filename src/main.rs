@@ -22,7 +22,7 @@ testChecker actual expected = do
 
 fn app() -> Router {
     Router::new()
-        .route("/submit", post(check))
+        .route("/submit", post(submit))
         .route("/status", get(status))
 }
 
