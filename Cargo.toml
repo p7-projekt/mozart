@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 axum = "0.7.7"
 serde = { version = "1.0.210", features = ["derive"] }
+thiserror = "1.0.64"
 tokio = { version = "1.40.0", features = ["full"] }
 uuid = { version = "1.10.0", features = ["fast-rng", "v4"] }
 

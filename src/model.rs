@@ -22,26 +22,6 @@ pub struct TestCase {
     output_parameters: Box<[Parameter]>,
 }
 
-impl TestCase {
-    pub fn to_haskell_test_case(&self) -> String {
-        let f_params = self
-            .input_parameters
-            .iter()
-            .map(|p| format!("({})", p.value))
-            .collect::<Box<[String]>>()
-            .join("\n");
-        let expected = self
-            .output_parameters
-            .iter()
-            .map(|p| format!("({})", p.value))
-            .collect::<Box<[String]>>()
-            .join("\n");
-
-        // important space prefix due to haskell indentation requirements
-        format!("  testChecker (solution {f_params}) ({expected})")
-    }
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct Parameter {
     #[serde(rename = "valueType")]
