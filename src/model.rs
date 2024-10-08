@@ -22,7 +22,7 @@ pub struct TestCase {
     pub output_parameters: Box<[Parameter]>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, PartialEq, Clone)]
 pub struct Parameter {
     #[serde(rename = "valueType")]
     pub value_type: String,
@@ -35,7 +35,7 @@ pub struct TestCaseResult {
     pub test_result: TestResult,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, PartialEq)]
 pub enum TestResult {
     /// The test case passed.
     Pass,
@@ -46,19 +46,18 @@ pub enum TestResult {
     Unknown,
 
     /// The test case did not pass.
-    Failure {
-        reason: TestCaseFailureReason,
+    Failure(TestCaseFailureReason),
+}
+
+/// The reason why a given test case failed.
+#[derive(Serialize, PartialEq)]
+pub enum TestCaseFailureReason {
+    /// The answer to the test case was incorrect.
+    WrongAnswer {
         input_parameters: Box<[Parameter]>,
         actual: String,
         expected: String,
     },
-}
-
-/// The reason why a given test case failed.
-#[derive(Serialize)]
-pub enum TestCaseFailureReason {
-    /// The answer to the test case was incorrect.
-    WrongAnswer,
 
     /// A runtime error occured during the test case.
     RuntimeError,
