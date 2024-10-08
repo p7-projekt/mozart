@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct Task {
-    solution: String,
+pub struct Submission {
+    pub solution: String,
     #[serde(rename = "testCases")]
-    test_cases: Box<[TestCase]>,
+    pub test_cases: Box<[TestCase]>,
 }
 
-impl Task {
+impl Submission {
     pub fn into_inner(self) -> (String, Box<[TestCase]>) {
         (self.solution, self.test_cases)
     }
@@ -15,24 +15,24 @@ impl Task {
 
 #[derive(Deserialize)]
 pub struct TestCase {
-    id: u64,
+    pub id: u64,
     #[serde(rename = "inputParameters")]
-    input_parameters: Box<[Parameter]>,
+    pub input_parameters: Box<[Parameter]>,
     #[serde(rename = "outputParameters")]
-    output_parameters: Box<[Parameter]>,
+    pub output_parameters: Box<[Parameter]>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct Parameter {
     #[serde(rename = "valueType")]
-    value_type: String,
-    value: String,
+    pub value_type: String,
+    pub value: String,
 }
 
 #[derive(Serialize)]
 pub struct TestCaseResult {
-    id: u64,
-    test_result: TestResult,
+    pub id: u64,
+    pub test_result: TestResult,
 }
 
 #[derive(Serialize)]
