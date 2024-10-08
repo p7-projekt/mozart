@@ -66,7 +66,7 @@ jobs:
         run: cargo fmt --all --check
 
   clippy:
-    name: Clippy Lints
+    name: Haskell Clippy Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
