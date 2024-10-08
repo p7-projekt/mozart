@@ -2,13 +2,15 @@ use crate::{
     error::{CheckError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
 };
-use haskell::Haskell;
 use std::{
     fs::File,
     io::{Read, Write},
     path::PathBuf,
 };
 
+#[cfg(feature = "haskell")]
+use haskell::Haskell;
+#[cfg(feature = "haskell")]
 mod haskell;
 
 /// The replacement target for inserting test cases.
