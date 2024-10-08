@@ -1,24 +1,23 @@
 use axum::{
     http::StatusCode,
-    response::IntoResponse,
     routing::{get, post},
     serve, Json, Router,
 };
-use model::Task;
+use error::CheckError;
+use model::{Submission, TestResult};
+use response::SubmitResponse;
+use runner::TestRunner;
+use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
+use uuid::Uuid;
 
+mod error;
 mod model;
+mod response;
+mod runner;
 
-const HASKELL: &str = r###"
-main = do
-  writeFile "UUID_PATH/output" ""
-TEST_CASES
-
-testChecker actual expected = do
-  if actual == expected
-    then appendFile "UUID_PATH/output" ("pass" ++ "\n")
-    else appendFile "UUID_PATH/output" ("failure" ++ "," ++ show actual ++ "," ++ show expected ++ "\n")
-"###;
+/// The parent directory of all test runner jobs.
+const PARENT_DIR: &str = "/tmp";
 
 fn app() -> Router {
     Router::new()
@@ -41,19 +40,40 @@ async fn status() -> StatusCode {
     StatusCode::OK
 }
 
-// 0. Decode incoming json body +
-// 1. generate task uuid + create temporary unique task directory +
-// 2. setup haskell testing structure
-// 3. generate test cases from parsed json +
-// 4. write generated test cases to file +
-// 5. write submitted solution to file +
-// 5. compile haskell program with submitted solutio and test cases +
-// 6. execute compiled haskell program +
-// 7. read test case output from output file +
-// 8. clean up temporary task directory +
-// 9. construct task response +
-async fn submit(Json(task): Json<Task>) -> impl IntoResponse {
-    StatusCode::OK
+async fn submit(Json(submission): Json<Submission>) -> SubmitResponse {
+    let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
+    println!("{:?}", temp_dir);
+
+    if fs::create_dir(temp_dir.as_path()).is_err() {
+        println!("create temp dir");
+        return SubmitResponse::Internal;
+    }
+
+    let runner = TestRunner::new(temp_dir.clone());
+
+    let response = match runner.check(submission) {
+        Ok(test_case_results) => {
+            if test_case_results
+                .iter()
+                .all(|tc| tc.test_result == TestResult::Pass)
+            {
+                SubmitResponse::Success
+            } else {
+                SubmitResponse::Failure(test_case_results)
+            }
+        }
+        Err(err) => match err {
+            CheckError::IOInteraction => SubmitResponse::Internal,
+            CheckError::Compilation(reason) => SubmitResponse::CompilationError(reason),
+        },
+    };
+
+    if let Err(e) = fs::remove_dir_all(temp_dir.as_path()) {
+        println!("delete temp dir, {}", e);
+        return SubmitResponse::Internal;
+    }
+
+    response
 }
 
 #[cfg(test)]
