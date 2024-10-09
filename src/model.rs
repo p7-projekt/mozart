@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct Task {
-    solution: String,
+pub struct Submission {
+    pub solution: String,
     #[serde(rename = "testCases")]
-    test_cases: Box<[TestCase]>,
+    pub test_cases: Box<[TestCase]>,
 }
 
-impl Task {
+impl Submission {
     pub fn into_inner(self) -> (String, Box<[TestCase]>) {
         (self.solution, self.test_cases)
     }
@@ -15,51 +15,57 @@ impl Task {
 
 #[derive(Deserialize)]
 pub struct TestCase {
-    id: u64,
+    pub id: u64,
     #[serde(rename = "inputParameters")]
-    input_parameters: Box<[Parameter]>,
+    pub input_parameters: Box<[Parameter]>,
     #[serde(rename = "outputParameters")]
-    output_parameters: Box<[Parameter]>,
+    pub output_parameters: Box<[Parameter]>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, PartialEq, Clone)]
 pub struct Parameter {
     #[serde(rename = "valueType")]
-    value_type: String,
-    value: String,
+    pub value_type: String,
+    pub value: String,
 }
 
 #[derive(Serialize)]
 pub struct TestCaseResult {
-    id: u64,
-    test_result: TestResult,
+    pub id: u64,
+    #[serde(rename = "testResult")]
+    pub test_result: TestResult,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, PartialEq)]
 pub enum TestResult {
     /// The test case passed.
+    #[serde(rename = "pass")]
     Pass,
 
     /// The result of the test case is unknown.
     ///
     /// This is likely caused by a previous test case causing a runtime error, thereby crashing the test runner.
+    #[serde(rename = "unknown")]
     Unknown,
 
     /// The test case did not pass.
-    Failure {
-        reason: TestCaseFailureReason,
+    #[serde(rename = "failure")]
+    Failure(TestCaseFailureReason),
+}
+
+/// The reason why a given test case failed.
+#[derive(Serialize, PartialEq)]
+pub enum TestCaseFailureReason {
+    /// The answer to the test case was incorrect.
+    #[serde(rename = "wrongAnswer")]
+    WrongAnswer {
+        #[serde(rename = "inputParameters")]
         input_parameters: Box<[Parameter]>,
         actual: String,
         expected: String,
     },
-}
-
-/// The reason why a given test case failed.
-#[derive(Serialize)]
-pub enum TestCaseFailureReason {
-    /// The answer to the test case was incorrect.
-    WrongAnswer,
 
     /// A runtime error occured during the test case.
+    #[serde(rename = "runtimeError")]
     RuntimeError,
 }

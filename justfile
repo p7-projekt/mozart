@@ -1,14 +1,16 @@
+PLATFORM := "--target=x86_64-unknown-linux-musl"
+
 default:
     just -l
 
 # Build and execute crate
-run:
-    cargo build --locked --release --target=x86_64-unknown-linux-musl
+run TARGET:
+    cargo build --locked --release {{PLATFORM}} --features {{TARGET}}
     ./target/x86_64-unknown-linux-musl/release/mozart
 
 # Run test cases
-test:
-    cargo test -q --target=x86_64-unknown-linux-musl
+test TARGET:
+    cargo test -q {{PLATFORM}} --features {{TARGET}}
 
 # Build the mozart image
 dbuild TARGET:

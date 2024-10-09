@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Release Build
+    name: Haskell Release Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -22,11 +22,11 @@ jobs:
         with:
           shared-key: "workflow"
 
-      - name: Run test cases
-        run: cargo build --release --target=x86_64-unknown-linux-musl
+      - name: Haskell Release Build
+        run: cargo build --release --target=x86_64-unknown-linux-musl --features haskell
 
   test:
-    name: Test Suite
+    name: Haskell Test Suite
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -43,7 +43,7 @@ jobs:
           shared-key: "workflow"
 
       - name: Run test cases
-        run: cargo test --all-features --target=x86_64-unknown-linux-musl
+        run: cargo test --target=x86_64-unknown-linux-musl --features haskell
 
   format:
     name: Formatting
@@ -66,7 +66,7 @@ jobs:
         run: cargo fmt --all --check
 
   clippy:
-    name: Clippy Lints
+    name: Haskell Clippy Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -83,14 +83,14 @@ jobs:
           shared-key: "workflow"
 
       - name: Run clippy linter
-        run: cargo clippy --tests -- -W clippy::all
+        run: cargo clippy --features haskell --tests -- -W clippy::all
 
   docker:
-    name: Docker Image
+    name: Haskell Docker Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
 
       - name: Build docker image
-        run: docker build -t mozart .
+        run: docker build -t mozart . -f docker/haskell
