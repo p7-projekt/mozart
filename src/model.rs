@@ -32,20 +32,24 @@ pub struct Parameter {
 #[derive(Serialize)]
 pub struct TestCaseResult {
     pub id: u64,
+    #[serde(rename = "testResult")]
     pub test_result: TestResult,
 }
 
 #[derive(Serialize, PartialEq)]
 pub enum TestResult {
     /// The test case passed.
+    #[serde(rename = "pass")]
     Pass,
 
     /// The result of the test case is unknown.
     ///
     /// This is likely caused by a previous test case causing a runtime error, thereby crashing the test runner.
+    #[serde(rename = "unknown")]
     Unknown,
 
     /// The test case did not pass.
+    #[serde(rename = "failure")]
     Failure(TestCaseFailureReason),
 }
 
@@ -53,12 +57,15 @@ pub enum TestResult {
 #[derive(Serialize, PartialEq)]
 pub enum TestCaseFailureReason {
     /// The answer to the test case was incorrect.
+    #[serde(rename = "wrongAnswer")]
     WrongAnswer {
+        #[serde(rename = "inputParameters")]
         input_parameters: Box<[Parameter]>,
         actual: String,
         expected: String,
     },
 
     /// A runtime error occured during the test case.
+    #[serde(rename = "runtimeError")]
     RuntimeError,
 }
