@@ -55,7 +55,7 @@ impl LanguageHandler for Haskell {
             let formatted_output_parameters = test_case
                 .output_parameters
                 .iter()
-                .map(|ip| self.format_parameter(ip))
+                .map(|op| self.format_parameter(op))
                 .collect::<Vec<String>>()
                 .join(" ");
 
