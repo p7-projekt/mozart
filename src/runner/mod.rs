@@ -68,14 +68,12 @@ impl TestRunner {
 
     pub fn check(self, submission: Submission) -> Result<Box<[TestCaseResult]>, CheckError> {
         let Ok(mut test_file) = File::create(self.handler.test_file_path()) else {
-            println!("create test file");
             return Err(CheckError::IOInteraction);
         };
 
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
         let Ok(mut output_file) = File::create_new(output_file_path.as_path()) else {
-            println!("create output file");
             return Err(CheckError::IOInteraction);
         };
 
@@ -93,24 +91,20 @@ impl TestRunner {
         println!("{final_test_code}");
 
         if test_file.write_all(final_test_code.as_bytes()).is_err() {
-            println!("write test code");
             return Err(CheckError::IOInteraction);
         }
 
         self.handler.run()?;
 
         let mut test_output = String::new();
-        if let Err(e) = output_file.read_to_string(&mut test_output) {
-            println!("read output file, {}", e);
+        if output_file.read_to_string(&mut test_output).is_err() {
             return Err(CheckError::IOInteraction);
         }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
-            println!("{}", index);
             if line.trim().is_empty() {
                 // not correct error
-                println!("line is empty {}", index);
                 return Err(CheckError::IOInteraction);
             }
 
@@ -125,7 +119,6 @@ impl TestRunner {
                 "f" => {
                     let (Some(actual), Some(expected)) = (split.next(), split.next()) else {
                         // not correct error type
-                        println!("failure without two values");
                         return Err(CheckError::IOInteraction);
                     };
 

@@ -42,10 +42,8 @@ async fn status() -> StatusCode {
 
 async fn submit(Json(submission): Json<Submission>) -> SubmitResponse {
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
-    println!("{:?}", temp_dir);
 
     if fs::create_dir(temp_dir.as_path()).is_err() {
-        println!("create temp dir");
         return SubmitResponse::Internal;
     }
 
@@ -68,8 +66,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmitResponse {
         },
     };
 
-    if let Err(e) = fs::remove_dir_all(temp_dir.as_path()) {
-        println!("delete temp dir, {}", e);
+    if fs::remove_dir_all(temp_dir.as_path()).is_err() {
         return SubmitResponse::Internal;
     }
 

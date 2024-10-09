@@ -86,12 +86,10 @@ impl LanguageHandler for Haskell {
             .args(["-O2", "-o", executable_str, test_file_str])
             .output()
         else {
-            println!("failed to run ghc");
             return Err(CheckError::IOInteraction);
         };
 
         let Ok(stderr) = String::from_utf8(compile_output.stderr) else {
-            println!("failed to decode stderr");
             // this should probably not be an io interaction, and possibly may never occur
             return Err(CheckError::IOInteraction);
         };
@@ -101,7 +99,6 @@ impl LanguageHandler for Haskell {
         }
 
         if Command::new(executable_path).output().is_err() {
-            println!("failed to run executable");
             return Err(CheckError::IOInteraction);
         }
 
