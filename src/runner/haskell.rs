@@ -83,7 +83,12 @@ impl LanguageHandler for Haskell {
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
 
         let Ok(compile_output) = Command::new("ghc")
-            .args(["-O2", "-o", executable_str, test_file_str])
+            .args([
+                "-O2",          // highest safe level of optimization (ensures same semantics)
+                "-o",           // specifies the output path of the binary
+                executable_str, // the output path of the binary
+                test_file_str,  // the compilation target
+            ])
             .output()
         else {
             return Err(CheckError::IOInteraction);
