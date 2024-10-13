@@ -1,5 +1,5 @@
 use crate::{
-    error::{CheckError, UUID_SHOULD_BE_VALID_STR},
+    error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
 };
 use std::{
@@ -50,7 +50,7 @@ pub trait LanguageHandler {
     /// Runs the submission against the test cases.
     ///
     /// If the programming language is compiled, then this step **also** includes compilation of the source code.
-    fn run(&self) -> Result<(), CheckError>;
+    async fn run(&self) -> Result<(), SubmissionError>;
 }
 
 pub struct TestRunner {
@@ -66,15 +66,18 @@ impl TestRunner {
         }
     }
 
-    pub fn check(self, submission: Submission) -> Result<Box<[TestCaseResult]>, CheckError> {
+    pub async fn check(
+        self,
+        submission: Submission,
+    ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         let Ok(mut test_file) = File::create(self.handler.test_file_path()) else {
-            return Err(CheckError::IOInteraction);
+            return Err(SubmissionError::IOInteraction);
         };
 
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
         let Ok(mut output_file) = File::create_new(output_file_path.as_path()) else {
-            return Err(CheckError::IOInteraction);
+            return Err(SubmissionError::IOInteraction);
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
@@ -91,21 +94,21 @@ impl TestRunner {
         println!("{final_test_code}");
 
         if test_file.write_all(final_test_code.as_bytes()).is_err() {
-            return Err(CheckError::IOInteraction);
+            return Err(SubmissionError::IOInteraction);
         }
 
-        self.handler.run()?;
+        self.handler.run().await?;
 
         let mut test_output = String::new();
         if output_file.read_to_string(&mut test_output).is_err() {
-            return Err(CheckError::IOInteraction);
+            return Err(SubmissionError::IOInteraction);
         }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
             if line.trim().is_empty() {
                 // not correct error
-                return Err(CheckError::IOInteraction);
+                return Err(SubmissionError::IOInteraction);
             }
 
             let test_case = &test_cases[index];
@@ -119,7 +122,7 @@ impl TestRunner {
                 "f" => {
                     let (Some(actual), Some(expected)) = (split.next(), split.next()) else {
                         // not correct error type
-                        return Err(CheckError::IOInteraction);
+                        return Err(SubmissionError::IOInteraction);
                     };
 
                     TestCaseResult {
@@ -132,7 +135,7 @@ impl TestRunner {
                     }
                 }
                 // not correct error type
-                _ => return Err(CheckError::IOInteraction),
+                _ => return Err(SubmissionError::IOInteraction),
             };
 
             test_case_results.push(result);

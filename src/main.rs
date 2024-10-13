@@ -3,9 +3,9 @@ use axum::{
     routing::{get, post},
     serve, Json, Router,
 };
-use error::CheckError;
+use error::SubmissionError;
 use model::{Submission, TestResult};
-use response::SubmitResponse;
+use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
@@ -15,6 +15,7 @@ mod error;
 mod model;
 mod response;
 mod runner;
+mod timeout;
 
 /// The parent directory of all test runner jobs.
 const PARENT_DIR: &str = "/tmp";
@@ -40,34 +41,31 @@ async fn status() -> StatusCode {
     StatusCode::OK
 }
 
-async fn submit(Json(submission): Json<Submission>) -> SubmitResponse {
+async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
 
     if fs::create_dir(temp_dir.as_path()).is_err() {
-        return SubmitResponse::Internal;
+        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
     }
 
     let runner = TestRunner::new(temp_dir.clone());
 
-    let response = match runner.check(submission) {
+    let response = match runner.check(submission).await {
         Ok(test_case_results) => {
             if test_case_results
                 .iter()
                 .all(|tc| tc.test_result == TestResult::Pass)
             {
-                SubmitResponse::Success
+                SubmissionResult::Pass
             } else {
-                SubmitResponse::Failure(test_case_results)
+                SubmissionResult::Failure(test_case_results)
             }
         }
-        Err(err) => match err {
-            CheckError::IOInteraction => SubmitResponse::Internal,
-            CheckError::Compilation(reason) => SubmitResponse::CompilationError(reason),
-        },
+        Err(err) => SubmissionResult::from(err),
     };
 
     if fs::remove_dir_all(temp_dir.as_path()).is_err() {
-        return SubmitResponse::Internal;
+        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
     }
 
     response
