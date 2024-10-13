@@ -5,8 +5,6 @@ use std::{
 };
 use tokio::time::{sleep, Instant};
 
-const GUARDED_EXPECT_DUE_TO_IF_CONDITION: &str = "guarded expect due to if condition";
-
 pub async fn timeout_process(
     timeout: Duration,
     mut process: Child,
@@ -21,7 +19,7 @@ pub async fn timeout_process(
         Ok(Some(exit_status)) => {
             let output = process
                 .wait_with_output()
-                .expect(GUARDED_EXPECT_DUE_TO_IF_CONDITION);
+                .expect("guarded expect due to if condition");
             Ok(Some((exit_status, output)))
         }
         Ok(None) => {
