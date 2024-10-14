@@ -32,11 +32,12 @@ pub struct Parameter {
 #[derive(Serialize)]
 pub struct TestCaseResult {
     pub id: u64,
-    #[serde(rename = "testResult")]
+    #[serde(rename = "testResult", flatten)]
     pub test_result: TestResult,
 }
 
 #[derive(Serialize, PartialEq)]
+#[serde(tag = "testResult")]
 pub enum TestResult {
     /// The test case passed.
     #[serde(rename = "pass")]
@@ -55,6 +56,7 @@ pub enum TestResult {
 
 /// The reason why a given test case failed.
 #[derive(Serialize, PartialEq)]
+#[serde(tag = "cause", content = "details")]
 pub enum TestCaseFailureReason {
     /// The answer to the test case was incorrect.
     #[serde(rename = "wrongAnswer")]
