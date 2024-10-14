@@ -1,29 +1,32 @@
-use crate::model::TestCaseResult;
+use crate::{error::SubmissionError, model::TestCaseResult};
 use axum::{
-    body::Body,
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use serde::Serialize;
 
-pub enum SubmitResponse {
-    Success,
+#[derive(Serialize)]
+#[serde(tag = "result", content = "reason")]
+pub enum SubmissionResult {
+    #[serde(rename = "pass")]
+    Pass,
+
+    #[serde(rename = "failure")]
     Failure(Box<[TestCaseResult]>),
-    CompilationError(String),
-    Internal,
+
+    #[serde(rename = "error")]
+    Error(String),
 }
 
-impl IntoResponse for SubmitResponse {
+impl IntoResponse for SubmissionResult {
     fn into_response(self) -> Response {
-        match self {
-            SubmitResponse::Success => StatusCode::OK.into_response(),
-            SubmitResponse::Failure(test_case_results) => {
-                (StatusCode::OK, Json(test_case_results)).into_response()
-            }
-            SubmitResponse::CompilationError(reason) => {
-                (StatusCode::BAD_REQUEST, Body::from(reason)).into_response()
-            }
-            SubmitResponse::Internal => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        }
+        (StatusCode::OK, Json(self)).into_response()
+    }
+}
+
+impl From<SubmissionError> for SubmissionResult {
+    fn from(err: SubmissionError) -> Self {
+        SubmissionResult::Error(err.to_string())
     }
 }
