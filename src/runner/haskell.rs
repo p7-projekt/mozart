@@ -118,7 +118,13 @@ impl LanguageHandler for Haskell {
             }
             // 1 means compilation error
             1 => match String::from_utf8(compile_output.stderr) {
-                Ok(stderr) => return Err(SubmissionError::Compilation(stderr)),
+                Ok(stderr) => {
+                    let mut temp_dir = self.temp_dir.clone();
+                    temp_dir.push("");
+                    let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+                    let stripped = stderr.replace(path, "");
+                    return Err(SubmissionError::Compilation(stripped));
+                }
                 // may never occur, and should not be this error type anyhow
                 Err(_) => return Err(SubmissionError::IOInteraction),
             },
