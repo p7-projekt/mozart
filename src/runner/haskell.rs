@@ -10,6 +10,8 @@ use std::{
     time::Duration,
 };
 
+const TIMEOUT: Duration = Duration::from_secs(5);
+
 const HASKELL_BASE_TEST_CODE: &str = r###"
 SOLUTION
 
@@ -102,10 +104,9 @@ impl LanguageHandler for Haskell {
             return Err(SubmissionError::IOInteraction);
         };
 
-        let (compile_exit_status, compile_output) =
-            timeout_process(Duration::from_secs(5), compile_process)
-                .await?
-                .ok_or(SubmissionError::CompileTimeout)?;
+        let (compile_exit_status, compile_output) = timeout_process(TIMEOUT, compile_process)
+            .await?
+            .ok_or(SubmissionError::CompileTimeout(TIMEOUT))?;
 
         match compile_exit_status
             .code()
@@ -141,11 +142,8 @@ impl LanguageHandler for Haskell {
             return Err(SubmissionError::IOInteraction);
         };
 
-        if timeout_process(Duration::from_secs(5), execution_handle)
-            .await?
-            .is_none()
-        {
-            return Err(SubmissionError::ExecuteTimeout);
+        if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
+            return Err(SubmissionError::ExecuteTimeout(TIMEOUT));
         }
 
         Ok(())
