@@ -10,6 +10,8 @@ use std::{
     time::Duration,
 };
 
+const TIMEOUT: Duration = Duration::from_secs(5);
+
 const HASKELL_BASE_TEST_CODE: &str = r###"
 SOLUTION
 
@@ -102,10 +104,9 @@ impl LanguageHandler for Haskell {
             return Err(SubmissionError::IOInteraction);
         };
 
-        let (compile_exit_status, compile_output) =
-            timeout_process(Duration::from_secs(5), compile_process)
-                .await?
-                .ok_or(SubmissionError::CompileTimeout)?;
+        let (compile_exit_status, compile_output) = timeout_process(TIMEOUT, compile_process)
+            .await?
+            .ok_or(SubmissionError::CompileTimeout(TIMEOUT))?;
 
         match compile_exit_status
             .code()
@@ -118,7 +119,13 @@ impl LanguageHandler for Haskell {
             }
             // 1 means compilation error
             1 => match String::from_utf8(compile_output.stderr) {
-                Ok(stderr) => return Err(SubmissionError::Compilation(stderr)),
+                Ok(stderr) => {
+                    let mut temp_dir = self.temp_dir.clone();
+                    temp_dir.push("");
+                    let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+                    let stripped = stderr.replace(path, "");
+                    return Err(SubmissionError::Compilation(stripped));
+                }
                 // may never occur, and should not be this error type anyhow
                 Err(_) => return Err(SubmissionError::IOInteraction),
             },
@@ -135,11 +142,8 @@ impl LanguageHandler for Haskell {
             return Err(SubmissionError::IOInteraction);
         };
 
-        if timeout_process(Duration::from_secs(5), execution_handle)
-            .await?
-            .is_none()
-        {
-            return Err(SubmissionError::ExecuteTimeout);
+        if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
+            return Err(SubmissionError::ExecuteTimeout(TIMEOUT));
         }
 
         Ok(())

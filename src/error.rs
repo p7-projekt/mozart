@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use thiserror::Error;
 
 pub const UUID_SHOULD_BE_VALID_STR: &str = "a uuid should always be valid utf8 encoding";
@@ -12,9 +14,9 @@ pub enum SubmissionError {
     #[error("an error occured during compilation: {0}")]
     Compilation(String),
 
-    #[error("a timeout happened during compilation")]
-    CompileTimeout,
+    #[error("compilation exceeded the timeout limit of {0:?}")]
+    CompileTimeout(Duration),
 
-    #[error("a timeout happened during execution")]
-    ExecuteTimeout,
+    #[error("execution exceeded the timeout limit of {0:?}")]
+    ExecuteTimeout(Duration),
 }
