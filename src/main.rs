@@ -8,7 +8,9 @@ use model::{Submission, TestResult};
 use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
+use time::{format_description::well_known::Rfc3339, UtcOffset};
 use tokio::net::TcpListener;
+use tracing_subscriber::fmt::time::OffsetTime;
 use uuid::Uuid;
 
 mod error;
@@ -28,6 +30,19 @@ fn app() -> Router {
 
 #[tokio::main]
 async fn main() {
+    let offset = UtcOffset::from_hms(2, 0, 0).expect("failed to create offset");
+    let time = OffsetTime::new(offset, Rfc3339);
+    tracing_subscriber::fmt()
+        .with_timer(time)
+        .with_ansi(false)
+        .with_file(false)
+        .with_line_number(false)
+        .with_level(true)
+        .with_thread_names(false)
+        .with_thread_ids(false)
+        .with_target(false)
+        .try_init()
+        .expect("failed to initialize subscriber");
     let mozart = app();
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await
