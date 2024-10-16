@@ -91,8 +91,6 @@ impl TestRunner {
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
 
-        println!("{final_test_code}");
-
         if test_file.write_all(final_test_code.as_bytes()).is_err() {
             return Err(SubmissionError::Internal);
         }
