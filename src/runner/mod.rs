@@ -71,13 +71,13 @@ impl TestRunner {
         submission: Submission,
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         let Ok(mut test_file) = File::create(self.handler.test_file_path()) else {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         };
 
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
         let Ok(mut output_file) = File::create_new(output_file_path.as_path()) else {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
@@ -94,21 +94,21 @@ impl TestRunner {
         println!("{final_test_code}");
 
         if test_file.write_all(final_test_code.as_bytes()).is_err() {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         }
 
         self.handler.run().await?;
 
         let mut test_output = String::new();
         if output_file.read_to_string(&mut test_output).is_err() {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
             if line.trim().is_empty() {
                 // not correct error
-                return Err(SubmissionError::IOInteraction);
+                return Err(SubmissionError::Internal);
             }
 
             let test_case = &test_cases[index];
@@ -122,7 +122,7 @@ impl TestRunner {
                 "f" => {
                     let (Some(actual), Some(expected)) = (split.next(), split.next()) else {
                         // not correct error type
-                        return Err(SubmissionError::IOInteraction);
+                        return Err(SubmissionError::Internal);
                     };
 
                     TestCaseResult {
@@ -135,7 +135,7 @@ impl TestRunner {
                     }
                 }
                 // not correct error type
-                _ => return Err(SubmissionError::IOInteraction),
+                _ => return Err(SubmissionError::Internal),
             };
 
             test_case_results.push(result);

@@ -45,7 +45,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
 
     if fs::create_dir(temp_dir.as_path()).is_err() {
-        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
+        return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 
     let runner = TestRunner::new(temp_dir.clone());
@@ -65,7 +65,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     };
 
     if fs::remove_dir_all(temp_dir.as_path()).is_err() {
-        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
+        return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 
     response

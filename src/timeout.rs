@@ -27,6 +27,6 @@ pub async fn timeout_process(
             Ok(None)
         }
         // this is in a scenario where the process never started
-        Err(_) => Err(SubmissionError::IOInteraction),
+        Err(_) => Err(SubmissionError::Internal),
     }
 }
