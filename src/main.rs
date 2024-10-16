@@ -10,6 +10,7 @@ use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use time::{format_description::well_known::Rfc3339, UtcOffset};
 use tokio::net::TcpListener;
+use tracing::{error, span, Level};
 use tracing_subscriber::fmt::time::OffsetTime;
 use uuid::Uuid;
 
@@ -33,10 +34,11 @@ async fn main() {
     let offset = UtcOffset::from_hms(2, 0, 0).expect("failed to create offset");
     let time = OffsetTime::new(offset, Rfc3339);
     tracing_subscriber::fmt()
+        .with_max_level(Level::DEBUG)
         .with_timer(time)
         .with_ansi(false)
-        .with_file(false)
-        .with_line_number(false)
+        .with_file(true)
+        .with_line_number(true)
         .with_level(true)
         .with_thread_names(false)
         .with_thread_ids(false)
@@ -57,9 +59,14 @@ async fn status() -> StatusCode {
 }
 
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
-    let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
+    let uuid = Uuid::new_v4();
+    let span = span!(Level::DEBUG, "", %uuid);
+    let _enter = span.enter();
+
+    let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
 
     if fs::create_dir(temp_dir.as_path()).is_err() {
+        error!("could not create temporary working directory");
         return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 
@@ -80,6 +87,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     };
 
     if fs::remove_dir_all(temp_dir.as_path()).is_err() {
+        error!("could not delete temporary working directory");
         return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 

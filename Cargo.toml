@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = []
+default = ["haskell"]
 haskell = []
 
 [dependencies]
@@ -14,7 +14,7 @@ thiserror = "1.0.64"
 time = "0.3.36"
 tokio = { version = "1.40.0", features = ["full"] }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["local-time", "time"] }
+tracing-subscriber = { version = "0.3.18", features = ["time"] }
 uuid = { version = "1.10.0", features = ["fast-rng", "v4"] }
 
 [dev-dependencies]
