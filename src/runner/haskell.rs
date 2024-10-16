@@ -101,7 +101,7 @@ impl LanguageHandler for Haskell {
             .stderr(Stdio::piped())
             .spawn()
         else {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         };
 
         let (compile_exit_status, compile_output) = timeout_process(TIMEOUT, compile_process)
@@ -127,10 +127,10 @@ impl LanguageHandler for Haskell {
                     return Err(SubmissionError::Compilation(stripped));
                 }
                 // may never occur, and should not be this error type anyhow
-                Err(_) => return Err(SubmissionError::IOInteraction),
+                Err(_) => return Err(SubmissionError::Internal),
             },
             // not correct error type
-            unknown => return Err(SubmissionError::IOInteraction), // internal
+            unknown => return Err(SubmissionError::Internal), // internal
         }
 
         let Ok(execution_handle) = Command::new(executable_path)
@@ -139,7 +139,7 @@ impl LanguageHandler for Haskell {
             .stderr(Stdio::piped())
             .spawn()
         else {
-            return Err(SubmissionError::IOInteraction);
+            return Err(SubmissionError::Internal);
         };
 
         if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
