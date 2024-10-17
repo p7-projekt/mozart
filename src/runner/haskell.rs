@@ -9,7 +9,7 @@ use std::{
     process::{Command, Stdio},
     time::Duration,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -143,7 +143,7 @@ impl LanguageHandler for Haskell {
                 let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
                 let stripped = stderr.replace(path, "");
 
-                // error!("compile error: {}", stripped);
+                debug!("compile error: {}", stripped);
                 return Err(SubmissionError::Compilation(stripped));
             }
             unknown => {

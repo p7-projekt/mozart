@@ -9,7 +9,7 @@ use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
-use tracing::{error, info, span, Level};
+use tracing::{debug, error, info, span, Level};
 use uuid::Uuid;
 
 mod error;
@@ -50,6 +50,8 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let span = span!(Level::TRACE, "", %uuid);
     let _enter = span.enter();
 
+    debug!(?submission);
+
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
 
     if let Err(err) = fs::create_dir(temp_dir.as_path()) {
@@ -62,6 +64,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     info!("checking submission");
     let response = match runner.check(submission).await {
         Ok(test_case_results) => {
+            debug!(?test_case_results);
             if test_case_results
                 .iter()
                 .all(|tc| tc.test_result == TestResult::Pass)

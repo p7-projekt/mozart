@@ -7,7 +7,7 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 #[cfg(feature = "haskell")]
 use haskell::Haskell;
@@ -96,6 +96,7 @@ impl TestRunner {
 
         info!("generating language specific test cases");
         let generated_test_cases = self.handler.generate_test_cases(&test_cases);
+        debug!(?generated_test_cases);
 
         info!("combining final test code");
         let final_test_code = self
@@ -104,6 +105,7 @@ impl TestRunner {
             .replace(SOLUTION_TARGET, solution.as_str())
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
+        debug!(?final_test_code);
 
         info!("writing test code to test file");
         if let Err(err) = test_file.write_all(final_test_code.as_bytes()) {
@@ -119,6 +121,7 @@ impl TestRunner {
             error!("could not read test output from output file: {}", err);
             return Err(SubmissionError::Internal);
         }
+        debug!(?test_output);
 
         info!("parsing output file");
         let mut test_case_results = Vec::new();
@@ -168,10 +171,12 @@ impl TestRunner {
 
         // extrapolating that a testcase caused a runtime error
         if test_case_results.len() != test_cases.len() {
-            info!("the submission had a runtime error");
-
             let index = test_case_results.len();
             let test_case = &test_cases[index];
+            info!(
+                "the submission had a runtime error in test case '{:?}'",
+                test_case
+            );
             let result = TestCaseResult {
                 id: test_case.id,
                 test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
@@ -181,6 +186,7 @@ impl TestRunner {
 
         // handling the remaining test cases which are considered unknown (were not run)
         for test_case in test_cases.iter().skip(test_cases.len()) {
+            debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
                 test_result: TestResult::Unknown,
