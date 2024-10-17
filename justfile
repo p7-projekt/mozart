@@ -6,7 +6,7 @@ default:
 # Build and execute crate
 run TARGET:
     cargo build --locked --release {{PLATFORM}} --features {{TARGET}}
-    MOZART_LOG=TRACE ./target/x86_64-unknown-linux-musl/release/mozart
+    ./target/x86_64-unknown-linux-musl/release/mozart
 
 # Run test cases
 test TARGET:
