@@ -19,7 +19,7 @@ pub async fn timeout_process(
         Ok(Some(exit_status)) => {
             let output = process
                 .wait_with_output()
-                .expect("guarded expect due to if condition");
+                .expect("guarded expect due to match statement");
             Ok(Some((exit_status, output)))
         }
         Ok(None) => {
