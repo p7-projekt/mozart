@@ -9,7 +9,7 @@ use std::{
     process::{Command, Stdio},
     time::Duration,
 };
-use tracing::error;
+use tracing::{error, info};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -90,6 +90,7 @@ impl LanguageHandler for Haskell {
         let test_file_path = self.test_file_path();
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
 
+        info!("spawning compilation process");
         let compile_process = Command::new("ghc")
             .args([
                 "-O2",          // highest safe level of optimization (ensures same semantics)
@@ -109,6 +110,7 @@ impl LanguageHandler for Haskell {
             }
         };
 
+        info!("starting timeout of compilation process");
         let (compile_exit_status, compile_output) =
             match timeout_process(TIMEOUT, compile_handle).await? {
                 Some((ces, co)) => (ces, co),
@@ -121,17 +123,20 @@ impl LanguageHandler for Haskell {
                 }
             };
 
+        info!("checking compilation exit status");
         match compile_exit_status
             .code()
             .expect("ghc should always return exit status code")
         {
             // 0 means success
             0 => {
+                info!("no compile errors");
                 // if we want to return warnings from successful compilations
                 // then this is the place to check stderr
             }
             // 1 means compilation error
             1 => {
+                info!("compile error");
                 let stderr = String::from_utf8_lossy(&compile_output.stderr);
                 let mut temp_dir = self.temp_dir.clone();
                 temp_dir.push("");
@@ -150,6 +155,7 @@ impl LanguageHandler for Haskell {
             }
         }
 
+        info!("spawning execution process");
         let execution_process = Command::new(executable_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -163,6 +169,7 @@ impl LanguageHandler for Haskell {
             }
         };
 
+        info!("starting execution process timeout");
         if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
             error!(
                 "execution process exceeded allowed time limit of {:?}",

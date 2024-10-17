@@ -9,7 +9,7 @@ use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
-use tracing::{error, span, trace, Level};
+use tracing::{error, info, span, Level};
 use uuid::Uuid;
 
 mod error;
@@ -41,6 +41,7 @@ async fn main() {
 }
 
 async fn status() -> StatusCode {
+    info!("performed status check");
     StatusCode::OK
 }
 
@@ -58,14 +59,17 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
 
     let runner = TestRunner::new(temp_dir.clone());
 
+    info!("checking submission");
     let response = match runner.check(submission).await {
         Ok(test_case_results) => {
             if test_case_results
                 .iter()
                 .all(|tc| tc.test_result == TestResult::Pass)
             {
+                info!("passed all test cases");
                 SubmissionResult::Pass
             } else {
+                info!("did not pass all test cases");
                 SubmissionResult::Failure(test_case_results)
             }
         }

@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 use tokio::time::{sleep, Instant};
-use tracing::error;
+use tracing::{error, info};
 
 pub async fn timeout_process(
     timeout: Duration,
@@ -18,12 +18,14 @@ pub async fn timeout_process(
 
     match process.try_wait() {
         Ok(Some(exit_status)) => {
+            info!("process exited before exceeding timeout");
             let output = process
                 .wait_with_output()
                 .expect("guarded expect due to match statement");
             Ok(Some((exit_status, output)))
         }
         Ok(None) => {
+            info!("killing process after exceeding timeout");
             process.kill().expect("should be able to kill child");
             Ok(None)
         }

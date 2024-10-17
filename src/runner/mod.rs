@@ -7,7 +7,7 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
 };
-use tracing::error;
+use tracing::{error, info};
 
 #[cfg(feature = "haskell")]
 use haskell::Haskell;
@@ -71,6 +71,7 @@ impl TestRunner {
         self,
         submission: Submission,
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
+        info!("creating test file");
         let mut test_file = match File::create(self.handler.test_file_path()) {
             Ok(tf) => tf,
             Err(err) => {
@@ -79,6 +80,7 @@ impl TestRunner {
             }
         };
 
+        info!("creating output file");
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
         let mut output_file = match File::create_new(output_file_path.as_path()) {
@@ -91,8 +93,11 @@ impl TestRunner {
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
         let (solution, test_cases) = submission.into_inner();
+
+        info!("generating language specific test cases");
         let generated_test_cases = self.handler.generate_test_cases(&test_cases);
 
+        info!("combining final test code");
         let final_test_code = self
             .handler
             .base_test_code()
@@ -100,6 +105,7 @@ impl TestRunner {
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
 
+        info!("writing test code to test file");
         if let Err(err) = test_file.write_all(final_test_code.as_bytes()) {
             error!("could not write test code to test file: {}", err);
             return Err(SubmissionError::Internal);
@@ -107,12 +113,14 @@ impl TestRunner {
 
         self.handler.run().await?;
 
+        info!("reading output file");
         let mut test_output = String::new();
         if let Err(err) = output_file.read_to_string(&mut test_output) {
             error!("could not read test output from output file: {}", err);
             return Err(SubmissionError::Internal);
         }
 
+        info!("parsing output file");
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
             let test_case = &test_cases[index];
@@ -160,6 +168,8 @@ impl TestRunner {
 
         // extrapolating that a testcase caused a runtime error
         if test_case_results.len() != test_cases.len() {
+            info!("the submission had a runtime error");
+
             let index = test_case_results.len();
             let test_case = &test_cases[index];
             let result = TestCaseResult {
