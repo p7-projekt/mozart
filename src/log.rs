@@ -3,7 +3,7 @@ use time::{format_description::well_known::Rfc3339, UtcOffset};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::time::OffsetTime;
 
-const DEFAULT_LOG_LEVEL: LevelFilter = LevelFilter::DEBUG;
+const DEFAULT_LOG_LEVEL: LevelFilter = LevelFilter::INFO;
 
 pub fn init() {
     let level = level_filter(option_env!("MOZART_LOG"));
