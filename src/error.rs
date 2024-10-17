@@ -8,8 +8,10 @@ pub const UUID_SHOULD_BE_VALID_STR: &str = "a uuid should always be valid utf8 e
 #[derive(Debug, Error)]
 pub enum SubmissionError {
     /// This error is often in relation to creating, reading from or writing to files and directories.
-    #[error("an error occured during an IO interaction")]
-    IOInteraction,
+    ///
+    /// It essentially represents any scenario where a user was not at fault for the error and would not benefit from an error message.
+    #[error("an internal server error occurred")]
+    Internal,
 
     #[error("an error occured during compilation: {0}")]
     Compilation(String),
