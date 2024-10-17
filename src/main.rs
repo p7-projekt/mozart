@@ -8,13 +8,12 @@ use model::{Submission, TestResult};
 use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
-use time::{format_description::well_known::Rfc3339, UtcOffset};
 use tokio::net::TcpListener;
-use tracing::{error, span, Level};
-use tracing_subscriber::fmt::time::OffsetTime;
+use tracing::{error, span, trace, Level};
 use uuid::Uuid;
 
 mod error;
+mod log;
 mod model;
 mod response;
 mod runner;
@@ -31,20 +30,7 @@ fn app() -> Router {
 
 #[tokio::main]
 async fn main() {
-    let offset = UtcOffset::from_hms(2, 0, 0).expect("failed to create offset");
-    let time = OffsetTime::new(offset, Rfc3339);
-    tracing_subscriber::fmt()
-        .with_max_level(Level::DEBUG)
-        .with_timer(time)
-        .with_ansi(false)
-        .with_file(true)
-        .with_line_number(true)
-        .with_level(true)
-        .with_thread_names(false)
-        .with_thread_ids(false)
-        .with_target(false)
-        .try_init()
-        .expect("failed to initialize subscriber");
+    log::init();
     let mozart = app();
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await
@@ -60,10 +46,11 @@ async fn status() -> StatusCode {
 
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let uuid = Uuid::new_v4();
-    let span = span!(Level::DEBUG, "", %uuid);
+    let span = span!(Level::TRACE, "", %uuid);
     let _enter = span.enter();
 
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
+    trace!("fdasfdsaf");
 
     if fs::create_dir(temp_dir.as_path()).is_err() {
         error!("could not create temporary working directory");
