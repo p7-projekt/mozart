@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 use tokio::time::{sleep, Instant};
+use tracing::error;
 
 pub async fn timeout_process(
     timeout: Duration,
@@ -26,7 +27,9 @@ pub async fn timeout_process(
             process.kill().expect("should be able to kill child");
             Ok(None)
         }
-        // this is in a scenario where the process never started
-        Err(_) => Err(SubmissionError::Internal),
+        Err(err) => {
+            error!("unknown error from waiting on process timeout: {}", err);
+            Err(SubmissionError::Internal)
+        }
     }
 }

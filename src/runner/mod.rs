@@ -7,6 +7,7 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
 };
+use tracing::error;
 
 #[cfg(feature = "haskell")]
 use haskell::Haskell;
@@ -70,14 +71,22 @@ impl TestRunner {
         self,
         submission: Submission,
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
-        let Ok(mut test_file) = File::create(self.handler.test_file_path()) else {
-            return Err(SubmissionError::Internal);
+        let mut test_file = match File::create(self.handler.test_file_path()) {
+            Ok(tf) => tf,
+            Err(err) => {
+                error!("could not create test file: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
-        let Ok(mut output_file) = File::create_new(output_file_path.as_path()) else {
-            return Err(SubmissionError::Internal);
+        let mut output_file = match File::create_new(output_file_path.as_path()) {
+            Ok(of) => of,
+            Err(err) => {
+                error!("could not create output file: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
@@ -91,35 +100,40 @@ impl TestRunner {
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
 
-        if test_file.write_all(final_test_code.as_bytes()).is_err() {
+        if let Err(err) = test_file.write_all(final_test_code.as_bytes()) {
+            error!("could not write test code to test file: {}", err);
             return Err(SubmissionError::Internal);
         }
 
         self.handler.run().await?;
 
         let mut test_output = String::new();
-        if output_file.read_to_string(&mut test_output).is_err() {
+        if let Err(err) = output_file.read_to_string(&mut test_output) {
+            error!("could not read test output from output file: {}", err);
             return Err(SubmissionError::Internal);
         }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
+            let test_case = &test_cases[index];
+
             if line.trim().is_empty() {
-                // not correct error
+                error!("empty line in output file for test case '{}'", test_case.id);
                 return Err(SubmissionError::Internal);
             }
 
-            let test_case = &test_cases[index];
-
             let mut split = line.split(',');
-            let result = match split.next().expect("line is not empty") {
+            let result = match split.next().expect("line should not be empty") {
                 "p" => TestCaseResult {
                     id: test_case.id,
                     test_result: TestResult::Pass,
                 },
                 "f" => {
                     let (Some(actual), Some(expected)) = (split.next(), split.next()) else {
-                        // not correct error type
+                        error!(
+                            "test case '{}' failure did not provide actual and expected values",
+                            test_case.id
+                        );
                         return Err(SubmissionError::Internal);
                     };
 
@@ -132,8 +146,13 @@ impl TestRunner {
                         }),
                     }
                 }
-                // not correct error type
-                _ => return Err(SubmissionError::Internal),
+                unknown => {
+                    error!(
+                        "unknown test outcome '{}' for test case '{}'",
+                        unknown, test_case.id
+                    );
+                    return Err(SubmissionError::Internal);
+                }
             };
 
             test_case_results.push(result);

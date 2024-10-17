@@ -9,6 +9,7 @@ use std::{
     process::{Command, Stdio},
     time::Duration,
 };
+use tracing::error;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -89,7 +90,7 @@ impl LanguageHandler for Haskell {
         let test_file_path = self.test_file_path();
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
 
-        let Ok(compile_process) = Command::new("ghc")
+        let compile_process = Command::new("ghc")
             .args([
                 "-O2",          // highest safe level of optimization (ensures same semantics)
                 "-o",           // specifies the output path of the binary
@@ -99,14 +100,26 @@ impl LanguageHandler for Haskell {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-        else {
-            return Err(SubmissionError::Internal);
+            .spawn();
+        let compile_handle = match compile_process {
+            Ok(ch) => ch,
+            Err(err) => {
+                error!("could not spawn compile process: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
-        let (compile_exit_status, compile_output) = timeout_process(TIMEOUT, compile_process)
-            .await?
-            .ok_or(SubmissionError::CompileTimeout(TIMEOUT))?;
+        let (compile_exit_status, compile_output) =
+            match timeout_process(TIMEOUT, compile_handle).await? {
+                Some((ces, co)) => (ces, co),
+                None => {
+                    error!(
+                        "compilation process exceeded allowed time limit of {:?}",
+                        TIMEOUT
+                    );
+                    return Err(SubmissionError::Internal);
+                }
+            };
 
         match compile_exit_status
             .code()
@@ -118,8 +131,6 @@ impl LanguageHandler for Haskell {
                 // then this is the place to check stderr
             }
             // 1 means compilation error
-            // not correct error type
-            unknown => return Err(SubmissionError::Internal), // internal
             1 => {
                 let stderr = String::from_utf8_lossy(&compile_output.stderr);
                 let mut temp_dir = self.temp_dir.clone();
@@ -127,20 +138,36 @@ impl LanguageHandler for Haskell {
                 let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
                 let stripped = stderr.replace(path, "");
 
+                // error!("compile error: {}", stripped);
                 return Err(SubmissionError::Compilation(stripped));
+            }
+            unknown => {
+                error!(
+                    "compilation returned unexpected exit status '{:?}'",
+                    unknown
+                );
+                return Err(SubmissionError::Internal);
             }
         }
 
-        let Ok(execution_handle) = Command::new(executable_path)
+        let execution_process = Command::new(executable_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-        else {
-            return Err(SubmissionError::Internal);
+            .spawn();
+        let execution_handle = match execution_process {
+            Ok(eh) => eh,
+            Err(err) => {
+                error!("could not spawn execution process: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
         if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
+            error!(
+                "execution process exceeded allowed time limit of {:?}",
+                TIMEOUT
+            );
             return Err(SubmissionError::ExecuteTimeout(TIMEOUT));
         }
 

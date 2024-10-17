@@ -50,10 +50,9 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let _enter = span.enter();
 
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
-    trace!("fdasfdsaf");
 
-    if fs::create_dir(temp_dir.as_path()).is_err() {
-        error!("could not create temporary working directory");
+    if let Err(err) = fs::create_dir(temp_dir.as_path()) {
+        error!("could not create temporary working directory: {}", err);
         return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 
@@ -73,8 +72,8 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
         Err(err) => SubmissionResult::from(err),
     };
 
-    if fs::remove_dir_all(temp_dir.as_path()).is_err() {
-        error!("could not delete temporary working directory");
+    if let Err(err) = fs::remove_dir_all(temp_dir.as_path()) {
+        error!("could not delete temporary working directory: {}", err);
         return SubmissionResult::Error(SubmissionError::Internal.to_string());
     }
 
