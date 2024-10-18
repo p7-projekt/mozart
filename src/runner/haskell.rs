@@ -119,7 +119,7 @@ impl LanguageHandler for Haskell {
                         "compilation process exceeded allowed time limit of {:?}",
                         TIMEOUT
                     );
-                    return Err(SubmissionError::Internal);
+                    return Err(SubmissionError::CompileTimeout(TIMEOUT));
                 }
             };
 
