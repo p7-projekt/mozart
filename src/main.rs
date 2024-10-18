@@ -56,7 +56,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
 
     if let Err(err) = fs::create_dir(temp_dir.as_path()) {
         error!("could not create temporary working directory: {}", err);
-        return SubmissionResult::Error(SubmissionError::Internal.to_string());
+        return SubmissionResult::from(SubmissionError::Internal);
     }
 
     let runner = TestRunner::new(temp_dir.clone());
@@ -81,7 +81,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
 
     if let Err(err) = fs::remove_dir_all(temp_dir.as_path()) {
         error!("could not delete temporary working directory: {}", err);
-        return SubmissionResult::Error(SubmissionError::Internal.to_string());
+        return SubmissionResult::from(SubmissionError::Internal);
     }
 
     response
