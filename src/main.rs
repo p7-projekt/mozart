@@ -22,6 +22,12 @@ mod timeout;
 /// The parent directory of all test runner jobs.
 const PARENT_DIR: &str = "/tmp";
 
+fn main() {
+    log::init();
+
+    start();
+}
+
 fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
@@ -29,8 +35,7 @@ fn app() -> Router {
 }
 
 #[tokio::main]
-async fn main() {
-    log::init();
+async fn start() {
     let mozart = app();
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await

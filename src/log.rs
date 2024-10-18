@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use time::{format_description::well_known::Rfc3339, UtcOffset};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::time::OffsetTime;
 
@@ -7,10 +6,7 @@ const DEFAULT_LOG_LEVEL: LevelFilter = LevelFilter::INFO;
 
 pub fn init() {
     let level = level_filter(option_env!("MOZART_LOG"));
-    // this offset is static and will not update at runtime
-    // nor will it respect summer/winter time
-    let offset = UtcOffset::from_hms(2, 0, 0).expect("failed to create offset");
-    let time = OffsetTime::new(offset, Rfc3339);
+    let time = OffsetTime::local_rfc_3339().expect("could not initialize time offset");
     tracing_subscriber::fmt()
         .with_max_level(level)
         .with_timer(time)
