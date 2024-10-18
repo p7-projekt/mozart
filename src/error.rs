@@ -1,5 +1,4 @@
 use std::time::Duration;
-
 use thiserror::Error;
 
 pub const UUID_SHOULD_BE_VALID_STR: &str = "a uuid should always be valid utf8 encoding";
