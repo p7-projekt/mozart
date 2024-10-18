@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 use tokio::time::{sleep, Instant};
+use tracing::{debug, error, info};
 
 pub async fn timeout_process(
     timeout: Duration,
@@ -15,18 +16,25 @@ pub async fn timeout_process(
         sleep(Duration::from_millis(100)).await;
     }
 
+    debug!("finished waiting on process after {:?}", start.elapsed());
+
     match process.try_wait() {
         Ok(Some(exit_status)) => {
+            info!("process exited before exceeding timeout");
+            debug!(?exit_status);
             let output = process
                 .wait_with_output()
-                .expect("guarded expect due to if condition");
+                .expect("guarded expect due to match statement");
             Ok(Some((exit_status, output)))
         }
         Ok(None) => {
+            info!("killing process after exceeding timeout");
             process.kill().expect("should be able to kill child");
             Ok(None)
         }
-        // this is in a scenario where the process never started
-        Err(_) => Err(SubmissionError::IOInteraction),
+        Err(err) => {
+            error!("unknown error from waiting on process timeout: {}", err);
+            Err(SubmissionError::Internal)
+        }
     }
 }

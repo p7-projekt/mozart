@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Submission {
     pub solution: String,
     #[serde(rename = "testCases")]
@@ -13,7 +13,7 @@ impl Submission {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct TestCase {
     pub id: u64,
     #[serde(rename = "inputParameters")]
@@ -22,21 +22,21 @@ pub struct TestCase {
     pub output_parameters: Box<[Parameter]>,
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
 pub struct Parameter {
     #[serde(rename = "valueType")]
     pub value_type: String,
     pub value: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct TestCaseResult {
     pub id: u64,
     #[serde(rename = "testResult", flatten)]
     pub test_result: TestResult,
 }
 
-#[derive(Serialize, PartialEq)]
+#[derive(Serialize, PartialEq, Debug)]
 #[serde(tag = "testResult")]
 pub enum TestResult {
     /// The test case passed.
@@ -55,7 +55,7 @@ pub enum TestResult {
 }
 
 /// The reason why a given test case failed.
-#[derive(Serialize, PartialEq)]
+#[derive(Serialize, PartialEq, Debug)]
 #[serde(tag = "cause", content = "details")]
 pub enum TestCaseFailureReason {
     /// The answer to the test case was incorrect.

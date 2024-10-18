@@ -4,6 +4,11 @@ default:
     just -l
 
 # Build and execute crate
+dev TARGET:
+    MOZART_LOG=TRACE cargo build --locked --release {{PLATFORM}} --features {{TARGET}}
+    ./target/x86_64-unknown-linux-musl/release/mozart
+
+# Build and execute crate
 run TARGET:
     cargo build --locked --release {{PLATFORM}} --features {{TARGET}}
     ./target/x86_64-unknown-linux-musl/release/mozart

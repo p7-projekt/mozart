@@ -9,9 +9,11 @@ use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
+use tracing::{debug, error, info, span, Level};
 use uuid::Uuid;
 
 mod error;
+mod log;
 mod model;
 mod response;
 mod runner;
@@ -20,6 +22,17 @@ mod timeout;
 /// The parent directory of all test runner jobs.
 const PARENT_DIR: &str = "/tmp";
 
+/// We need to initilize the logger before multithreading happens
+/// otherwise local time offset cannot be determined.
+///
+/// As a result we initialise the logger inside a synchronous main function,
+/// before calling the async tokio main function
+fn main() {
+    log::init();
+
+    start();
+}
+
 fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
@@ -27,7 +40,7 @@ fn app() -> Router {
 }
 
 #[tokio::main]
-async fn main() {
+async fn start() {
     let mozart = app();
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await
@@ -38,34 +51,47 @@ async fn main() {
 }
 
 async fn status() -> StatusCode {
+    info!("performed status check");
     StatusCode::OK
 }
 
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
-    let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, Uuid::new_v4()));
+    let uuid = Uuid::new_v4();
+    let span = span!(Level::TRACE, "", %uuid);
+    let _enter = span.enter();
 
-    if fs::create_dir(temp_dir.as_path()).is_err() {
-        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
+    debug!(?submission);
+
+    let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
+
+    if let Err(err) = fs::create_dir(temp_dir.as_path()) {
+        error!("could not create temporary working directory: {}", err);
+        return SubmissionResult::from(SubmissionError::Internal);
     }
 
     let runner = TestRunner::new(temp_dir.clone());
 
+    info!("checking submission");
     let response = match runner.check(submission).await {
         Ok(test_case_results) => {
+            debug!(?test_case_results);
             if test_case_results
                 .iter()
                 .all(|tc| tc.test_result == TestResult::Pass)
             {
+                info!("passed all test cases");
                 SubmissionResult::Pass
             } else {
+                info!("did not pass all test cases");
                 SubmissionResult::Failure(test_case_results)
             }
         }
         Err(err) => SubmissionResult::from(err),
     };
 
-    if fs::remove_dir_all(temp_dir.as_path()).is_err() {
-        return SubmissionResult::Error(SubmissionError::IOInteraction.to_string());
+    if let Err(err) = fs::remove_dir_all(temp_dir.as_path()) {
+        error!("could not delete temporary working directory: {}", err);
+        return SubmissionResult::from(SubmissionError::Internal);
     }
 
     response

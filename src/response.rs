@@ -17,16 +17,26 @@ pub enum SubmissionResult {
 
     #[serde(rename = "error")]
     Error(String),
+
+    InternalError,
 }
 
 impl IntoResponse for SubmissionResult {
     fn into_response(self) -> Response {
-        (StatusCode::OK, Json(self)).into_response()
+        if let SubmissionResult::InternalError = self {
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        } else {
+            (StatusCode::OK, Json(self)).into_response()
+        }
     }
 }
 
 impl From<SubmissionError> for SubmissionResult {
     fn from(err: SubmissionError) -> Self {
-        SubmissionResult::Error(err.to_string())
+        if let SubmissionError::Internal = err {
+            SubmissionResult::InternalError
+        } else {
+            SubmissionResult::Error(err.to_string())
+        }
     }
 }

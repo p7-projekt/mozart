@@ -9,6 +9,7 @@ use std::{
     process::{Command, Stdio},
     time::Duration,
 };
+use tracing::{debug, error, info};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -89,7 +90,8 @@ impl LanguageHandler for Haskell {
         let test_file_path = self.test_file_path();
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
 
-        let Ok(compile_process) = Command::new("ghc")
+        info!("spawning compilation process");
+        let compile_process = Command::new("ghc")
             .args([
                 "-O2",          // highest safe level of optimization (ensures same semantics)
                 "-o",           // specifies the output path of the binary
@@ -99,50 +101,80 @@ impl LanguageHandler for Haskell {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-        else {
-            return Err(SubmissionError::IOInteraction);
+            .spawn();
+        let compile_handle = match compile_process {
+            Ok(ch) => ch,
+            Err(err) => {
+                error!("could not spawn compile process: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
-        let (compile_exit_status, compile_output) = timeout_process(TIMEOUT, compile_process)
-            .await?
-            .ok_or(SubmissionError::CompileTimeout(TIMEOUT))?;
+        info!("starting timeout of compilation process");
+        let (compile_exit_status, compile_output) =
+            match timeout_process(TIMEOUT, compile_handle).await? {
+                Some((ces, co)) => (ces, co),
+                None => {
+                    error!(
+                        "compilation process exceeded allowed time limit of {:?}",
+                        TIMEOUT
+                    );
+                    return Err(SubmissionError::CompileTimeout(TIMEOUT));
+                }
+            };
 
+        info!("checking compilation exit status");
         match compile_exit_status
             .code()
             .expect("ghc should always return exit status code")
         {
             // 0 means success
             0 => {
+                info!("no compile errors");
                 // if we want to return warnings from successful compilations
                 // then this is the place to check stderr
             }
             // 1 means compilation error
-            1 => match String::from_utf8(compile_output.stderr) {
-                Ok(stderr) => {
-                    let mut temp_dir = self.temp_dir.clone();
-                    temp_dir.push("");
-                    let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-                    let stripped = stderr.replace(path, "");
-                    return Err(SubmissionError::Compilation(stripped));
-                }
-                // may never occur, and should not be this error type anyhow
-                Err(_) => return Err(SubmissionError::IOInteraction),
-            },
-            // not correct error type
-            unknown => return Err(SubmissionError::IOInteraction), // internal
+            1 => {
+                info!("compile error");
+                let stderr = String::from_utf8_lossy(&compile_output.stderr);
+                let mut temp_dir = self.temp_dir.clone();
+                temp_dir.push("");
+                let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+                let stripped = stderr.replace(path, "");
+
+                debug!("compile error: {}", stripped);
+                return Err(SubmissionError::Compilation(stripped));
+            }
+            unknown => {
+                error!(
+                    "compilation returned unexpected exit status '{:?}'",
+                    unknown
+                );
+                return Err(SubmissionError::Internal);
+            }
         }
 
-        let Ok(execution_handle) = Command::new(executable_path)
+        info!("spawning execution process");
+        let execution_process = Command::new(executable_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-        else {
-            return Err(SubmissionError::IOInteraction);
+            .spawn();
+        let execution_handle = match execution_process {
+            Ok(eh) => eh,
+            Err(err) => {
+                error!("could not spawn execution process: {}", err);
+                return Err(SubmissionError::Internal);
+            }
         };
 
+        info!("starting execution process timeout");
         if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
+            error!(
+                "execution process exceeded allowed time limit of {:?}",
+                TIMEOUT
+            );
             return Err(SubmissionError::ExecuteTimeout(TIMEOUT));
         }
 
