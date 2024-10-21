@@ -1,0 +1,50 @@
+meta {
+  name: pass, bool
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "solution b = b && True",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "bool",
+            "value": "false"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "bool",
+            "value": "false"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "bool",
+            "value": "true"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "bool",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  }
+  
+}
