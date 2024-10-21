@@ -38,3 +38,80 @@ fn level_filter(env_var: Option<&str>) -> LevelFilter {
         DEFAULT_LOG_LEVEL
     }
 }
+
+#[cfg(test)]
+mod level_filter {
+    use tracing::level_filters::LevelFilter;
+
+    use super::{level_filter, DEFAULT_LOG_LEVEL};
+
+    #[test]
+    fn none() {
+        let input = None;
+        let expected = DEFAULT_LOG_LEVEL;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn invalid_input() {
+        let input = Some("foo");
+        let expected = DEFAULT_LOG_LEVEL;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn trace() {
+        let input = Some("trace");
+        let expected = LevelFilter::TRACE;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn debug() {
+        let input = Some("debug");
+        let expected = LevelFilter::DEBUG;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn info() {
+        let input = Some("info");
+        let expected = LevelFilter::INFO;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn warn() {
+        let input = Some("warn");
+        let expected = LevelFilter::WARN;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn error() {
+        let input = Some("error");
+        let expected = LevelFilter::ERROR;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+}
