@@ -6,6 +6,17 @@ use std::{
 use tokio::time::{sleep, Instant};
 use tracing::{debug, error, info};
 
+/// Calls the supplied `process` with the provided `timeout`.
+///
+/// If the timeout is exceeded the process is killed as part of this function call.
+///
+/// No matter if the process finished on its own or was killed after the timeout an `Ok` is returned.
+/// The `Option` inside the `Ok` indicates whether the process exited naturally or was killed.
+/// If the process exited naturally the `Some` will contain the processes exit status.
+/// If the process was killed a `None` is returned as no exit status could be determined.
+///
+/// # Errors
+/// An error can occur while attempting to wait on process, which returns a `SubmissionError::Internal`.
 pub async fn timeout_process(
     timeout: Duration,
     mut process: Child,
