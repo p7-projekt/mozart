@@ -33,12 +33,17 @@ fn main() {
     start();
 }
 
+/// Defines the routing of mozart.
+///
+/// Mainly exists as a standalone function due to logical reasoning,
+/// and to make it easier to write test cases that 'ping' the router.
 fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
         .route("/status", get(status))
 }
 
+/// This functions starts the actual server and will not return for as long as the server is running.
 #[tokio::main]
 async fn start() {
     let mozart = app();
@@ -50,11 +55,16 @@ async fn start() {
         .expect("failed to start mozart");
 }
 
+/// An endpoint that exists to quickly assert whether mozart is still healthy.
+///
+/// This does not have any purpose for mozart itself, instead it is used as
+/// part of the k3s deployment to ensure health of the individual mozart instances.
 async fn status() -> StatusCode {
     info!("performed status check");
     StatusCode::OK
 }
 
+/// The endpoint used to check a given submission against a set of test cases.
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let uuid = Uuid::new_v4();
     let span = span!(Level::TRACE, "", %uuid);
