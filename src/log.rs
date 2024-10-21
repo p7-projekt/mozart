@@ -66,6 +66,16 @@ mod level_filter {
     }
 
     #[test]
+    fn off() {
+        let input = Some("off");
+        let expected = LevelFilter::OFF;
+
+        let actual = level_filter(input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
     fn trace() {
         let input = Some("trace");
         let expected = LevelFilter::TRACE;
