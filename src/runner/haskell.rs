@@ -11,8 +11,13 @@ use std::{
 };
 use tracing::{debug, error, info};
 
+/// The timeout duration for the compilation and execution process.
 const TIMEOUT: Duration = Duration::from_secs(5);
 
+/// The base test 'runner' code for Haskell.
+///
+/// The markers `SOLUTION`, `TEST_CASES`, and `OUTPUT_FILE_PATH` are being substituted
+/// at runtime with the request specific values.
 const HASKELL_BASE_TEST_CODE: &str = r###"
 SOLUTION
 
@@ -25,7 +30,9 @@ testChecker actual expected = do
     else appendFile "OUTPUT_FILE_PATH" ("f" ++ "," ++ show actual ++ "," ++ show expected ++ "\n")
 "###;
 
+/// The language handler for Haskell.
 pub struct Haskell {
+    /// A path buffer to the current working directory of a given request.
     temp_dir: PathBuf,
 }
 
