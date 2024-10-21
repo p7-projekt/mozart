@@ -196,3 +196,125 @@ impl LanguageHandler for Haskell {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod format_parameter {
+    use super::Haskell;
+    use crate::{
+        model::{Parameter, ParameterType},
+        runner::LanguageHandler,
+    };
+    use std::path::PathBuf;
+
+    #[test]
+    fn bool_false() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Bool,
+            value: String::from("false"),
+        };
+        let expected = String::from("False");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn bool_true() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Bool,
+            value: String::from("true"),
+        };
+        let expected = String::from("True");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn int_positive() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("100"),
+        };
+        let expected = String::from("(100)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn int_negative() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("-100"),
+        };
+        let expected = String::from("(-100)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn float_positive() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Float,
+            value: String::from("10.0"),
+        };
+        let expected = String::from("(10.0)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn float_negative() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Float,
+            value: String::from("-10.0"),
+        };
+        let expected = String::from("(-10.0)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn char() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Char,
+            value: String::from("a"),
+        };
+        let expected = String::from("'a'");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn string() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::String,
+            value: String::from("hello"),
+        };
+        let expected = String::from(r#""hello""#);
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+}
