@@ -1,5 +1,6 @@
 use axum::{
-    http::StatusCode,
+    body::Body,
+    http::{Request, StatusCode},
     routing::{get, post},
     serve, Json, Router,
 };
@@ -9,7 +10,8 @@ use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
-use tracing::{debug, error, info, span, Level};
+use tower_http::trace::TraceLayer;
+use tracing::{debug, error, info, info_span};
 use uuid::Uuid;
 
 mod error;
@@ -41,6 +43,12 @@ fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
         .route("/status", get(status))
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|_: &Request<Body>| {
+                let request_id = Uuid::new_v4();
+                info_span!("request", %request_id)
+            }),
+        )
 }
 
 /// This functions starts the actual server and will not return for as long as the server is running.
@@ -67,12 +75,11 @@ async fn status() -> StatusCode {
 /// The endpoint used to check a given submission against a set of test cases.
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let uuid = Uuid::new_v4();
-    let span = span!(Level::TRACE, "", %uuid);
-    let _enter = span.enter();
 
     debug!(?submission);
 
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
+    info!("request unique directory: {:?}", temp_dir);
 
     if let Err(err) = fs::create_dir(temp_dir.as_path()) {
         error!("could not create temporary working directory: {}", err);
