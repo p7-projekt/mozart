@@ -100,7 +100,7 @@ impl LanguageHandler for Haskell {
 
     async fn run(&self) -> Result<(), SubmissionError> {
         let mut executable_path = self.temp_dir.clone();
-        executable_path.push("/test");
+        executable_path.push("test");
         let executable_str = executable_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
         let test_file_path = self.test_file_path();
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
