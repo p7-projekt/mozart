@@ -1,7 +1,7 @@
 use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
-    model::{Parameter, TestCase},
+    model::{Parameter, ParameterType, TestCase},
     timeout::timeout_process,
 };
 use std::{
@@ -77,9 +77,17 @@ impl LanguageHandler for Haskell {
     }
 
     fn format_parameter(&self, parameter: &Parameter) -> String {
-        match parameter.value_type.as_str() {
-            "string" => format!(r#"("{}")"#, parameter.value),
-            _ => format!("({})", parameter.value),
+        match parameter.value_type {
+            ParameterType::Int | ParameterType::Float => format!("({})", parameter.value),
+            ParameterType::Char => format!("('{}')", parameter.value),
+            ParameterType::String => format!(r#"("{}")"#, parameter.value),
+            ParameterType::Bool => {
+                let mut chars = parameter.value.chars();
+                match chars.next() {
+                    None => unreachable!(""),
+                    Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            }
         }
     }
 

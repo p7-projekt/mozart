@@ -24,8 +24,18 @@ pub struct TestCase {
 #[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Parameter {
-    pub value_type: String,
+    pub value_type: ParameterType,
     pub value: String,
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum ParameterType {
+    Bool,
+    Int,
+    Float,
+    Char,
+    String,
 }
 
 #[derive(Serialize, Debug)]
