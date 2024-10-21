@@ -86,8 +86,8 @@ impl LanguageHandler for Haskell {
     fn format_parameter(&self, parameter: &Parameter) -> String {
         match parameter.value_type {
             ParameterType::Int | ParameterType::Float => format!("({})", parameter.value),
-            ParameterType::Char => format!("('{}')", parameter.value),
-            ParameterType::String => format!(r#"("{}")"#, parameter.value),
+            ParameterType::Char => format!("'{}'", parameter.value),
+            ParameterType::String => format!(r#""{}""#, parameter.value),
             ParameterType::Bool => {
                 let mut chars = parameter.value.chars();
                 match chars.next() {
