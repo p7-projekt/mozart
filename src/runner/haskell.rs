@@ -4,11 +4,8 @@ use crate::{
     model::{Parameter, ParameterType, TestCase},
     timeout::timeout_process,
 };
-use std::{
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::Duration,
-};
+use std::{path::PathBuf, process::Stdio, time::Duration};
+use tokio::process::Command;
 use tracing::{debug, error, info};
 
 /// The timeout duration for the compilation and execution process.
