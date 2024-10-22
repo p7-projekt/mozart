@@ -167,7 +167,7 @@ impl TestRunner {
 
         // extrapolating that a testcase caused a runtime error
         if test_case_results.len() != submission.test_cases.len() {
-            let index = test_case_results.len() - 1;
+            let index = test_case_results.len();
             let test_case = &submission.test_cases[index];
             info!(
                 "the submission had a runtime error in test case '{:?}'",
