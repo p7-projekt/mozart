@@ -52,10 +52,10 @@ impl IntoResponse for SubmissionResult {
 
 impl From<SubmissionError> for SubmissionResult {
     fn from(err: SubmissionError) -> Self {
-        if let SubmissionError::Internal = err {
-            SubmissionResult::InternalError
-        } else {
-            SubmissionResult::Error(err.to_string())
+        match err {
+            SubmissionError::Internal => SubmissionResult::InternalError,
+            SubmissionError::Failure(tcr) => SubmissionResult::Failure(tcr),
+            other => SubmissionResult::Error(other.to_string()),
         }
     }
 }

@@ -5,7 +5,7 @@ use axum::{
     serve, Json, Router,
 };
 use error::SubmissionError;
-use model::{Submission, TestResult};
+use model::Submission;
 use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
@@ -89,21 +89,10 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let runner = TestRunner::new(temp_dir.clone());
 
     info!("checking submission");
-    let response = match runner.check(submission).await {
-        Ok(test_case_results) => {
-            debug!(?test_case_results);
-            if test_case_results
-                .iter()
-                .all(|tc| tc.test_result == TestResult::Pass)
-            {
-                info!("passed all test cases");
-                SubmissionResult::Pass
-            } else {
-                info!("did not pass all test cases");
-                SubmissionResult::Failure(test_case_results)
-            }
-        }
-        Err(err) => SubmissionResult::from(err),
+    let response = if let Err(err) = runner.check(submission).await {
+        SubmissionResult::from(err)
+    } else {
+        SubmissionResult::Pass
     };
 
     if let Err(err) = fs::remove_dir_all(temp_dir.as_path()) {

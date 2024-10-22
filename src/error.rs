@@ -1,5 +1,6 @@
 //! Contains errors and related values.
 
+use crate::model::TestCaseResult;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -36,4 +37,12 @@ pub enum SubmissionError {
     /// The provided `Duration` should contain the timeout duration that was exceeded.
     #[error("execution exceeded the timeout limit of {0:?}")]
     ExecuteTimeout(Duration),
+
+    /// The submission did not pass all test cases.
+    ///
+    /// The underlying cause for the failure is contained within the `Box<[TestCaseResult]>`.
+    ///
+    /// This error variant should NOT be stringified, instead it should be converted to a `[SubmissionResult::Failure]`.
+    #[error("the submission did not pass all test cases")]
+    Failure(Box<[TestCaseResult]>),
 }

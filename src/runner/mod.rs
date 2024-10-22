@@ -67,10 +67,7 @@ impl TestRunner {
         }
     }
 
-    pub async fn check(
-        self,
-        submission: Submission,
-    ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
+    pub async fn check(self, submission: Submission) -> Result<(), SubmissionError> {
         info!("creating test file");
         let mut test_file = match File::create(self.handler.test_file_path()) {
             Ok(tf) => tf,
@@ -197,6 +194,19 @@ impl TestRunner {
             test_case_results.push(result);
         }
 
-        Ok(test_case_results.into_boxed_slice())
+        debug!(?test_case_results);
+
+        if test_case_results
+            .iter()
+            .all(|tc| tc.test_result == TestResult::Pass)
+        {
+            info!("passed all test cases");
+            Ok(())
+        } else {
+            info!("did not pass all test cases");
+            Err(SubmissionError::Failure(
+                test_case_results.into_boxed_slice(),
+            ))
+        }
     }
 }
