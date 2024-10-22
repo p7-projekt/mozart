@@ -53,3 +53,43 @@ pub async fn timeout_process(
         }
     }
 }
+
+#[cfg(test)]
+mod timeout_process {
+    use crate::{error::SubmissionError, timeout::timeout_process};
+    use std::time::Duration;
+    use tokio::process::Command;
+
+    #[tokio::test]
+    async fn exceed_timeout() -> Result<(), SubmissionError> {
+        let process = Command::new("sleep")
+            .arg("1")
+            .spawn()
+            .expect("failed to spawn process");
+        let duration = Duration::from_millis(900);
+        let expected = None;
+
+        let actual = timeout_process(duration, process).await?;
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn return_before_timeout() -> Result<(), SubmissionError> {
+        let process = Command::new("sleep")
+            .arg("0")
+            .spawn()
+            .expect("failed to spawn process");
+        let duration = Duration::from_secs(1);
+
+        let result = timeout_process(duration, process).await?;
+
+        // check if the exit status of the is a success
+        // meaning it was not terminated and it exited with a zero status
+        assert!(result.is_some_and(|es| es.0.success()));
+
+        Ok(())
+    }
+}
