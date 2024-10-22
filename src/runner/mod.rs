@@ -1,3 +1,5 @@
+//! Defines the components necessary for the language agnostic test runner to exist.
+
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
@@ -54,12 +56,16 @@ pub trait LanguageHandler {
     async fn run(&self) -> Result<(), SubmissionError>;
 }
 
+/// The runner responsible for testing a solution against a set of test cases.
+///
+/// The underlying language being tested is determined at compile time via feature flags.
 pub struct TestRunner {
     #[cfg(feature = "haskell")]
     handler: Haskell,
 }
 
 impl TestRunner {
+    /// Create a new test runner, based on the enabled feature flag for toggling languages.
     pub fn new(temp_dir: PathBuf) -> Self {
         Self {
             #[cfg(feature = "haskell")]
@@ -67,6 +73,11 @@ impl TestRunner {
         }
     }
 
+    /// Checks a given submissmion against the provided test cases.
+    ///
+    /// # Errors
+    /// An `Ok` result indicates that all test cases were passed.
+    /// An `Err` result can indicate a number of things specified in the variants of `[SubmissionError]`.
     pub async fn check(self, submission: Submission) -> Result<(), SubmissionError> {
         info!("creating test file");
         let mut test_file = match File::create(self.handler.test_file_path()) {
