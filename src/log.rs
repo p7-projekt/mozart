@@ -1,3 +1,5 @@
+//! Contains objects related to setting up logging for mozart.
+
 use std::str::FromStr;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::time::OffsetTime;
