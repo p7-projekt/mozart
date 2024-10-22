@@ -1,3 +1,5 @@
+//! Contains the language specific implementation for the Haskell programming language.
+
 use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
