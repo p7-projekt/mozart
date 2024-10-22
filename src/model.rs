@@ -7,12 +7,6 @@ pub struct Submission {
     pub test_cases: Box<[TestCase]>,
 }
 
-impl Submission {
-    pub fn into_inner(self) -> (String, Box<[TestCase]>) {
-        (self.solution, self.test_cases)
-    }
-}
-
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TestCase {

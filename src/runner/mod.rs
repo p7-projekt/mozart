@@ -92,17 +92,17 @@ impl TestRunner {
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-        let (solution, test_cases) = submission.into_inner();
+        // let (solution, test_cases) = submission.into_inner();
 
         info!("generating language specific test cases");
-        let generated_test_cases = self.handler.generate_test_cases(&test_cases);
+        let generated_test_cases = self.handler.generate_test_cases(&submission.test_cases);
         debug!(?generated_test_cases);
 
         info!("combining final test code");
         let final_test_code = self
             .handler
             .base_test_code()
-            .replace(SOLUTION_TARGET, solution.as_str())
+            .replace(SOLUTION_TARGET, &submission.solution)
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
         debug!(?final_test_code);
@@ -126,7 +126,7 @@ impl TestRunner {
         info!("parsing output file");
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
-            let test_case = &test_cases[index];
+            let test_case = &submission.test_cases[index];
 
             if line.trim().is_empty() {
                 error!("empty line in output file for test case '{}'", test_case.id);
@@ -170,9 +170,9 @@ impl TestRunner {
         }
 
         // extrapolating that a testcase caused a runtime error
-        if test_case_results.len() != test_cases.len() {
-            let test_case = &test_cases[index];
+        if test_case_results.len() != submission.test_cases.len() {
             let index = test_case_results.len() - 1;
+            let test_case = &submission.test_cases[index];
             info!(
                 "the submission had a runtime error in test case '{:?}'",
                 test_case
@@ -185,7 +185,11 @@ impl TestRunner {
         }
 
         // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in test_cases.iter().skip(test_cases.len()) {
+        for test_case in submission
+            .test_cases
+            .iter()
+            .skip(submission.test_cases.len())
+        {
             debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
