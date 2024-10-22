@@ -1,6 +1,6 @@
 //! All the models of mozart relate to incoming objects or outgoing objects, with a few being both.
 //!
-//! All models are agnostic both in terms of the underlying programming language, and the exercise being 'checked' against.
+//! The models are agnostic both in terms of the underlying programming language, and the exercise being 'checked' against.
 
 use serde::{Deserialize, Serialize};
 
