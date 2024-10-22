@@ -92,7 +92,6 @@ impl TestRunner {
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-        // let (solution, test_cases) = submission.into_inner();
 
         info!("generating language specific test cases");
         let generated_test_cases = self.handler.generate_test_cases(&submission.test_cases);
