@@ -15,7 +15,7 @@ run LANGUAGE:
 
 # Run test cases
 test LANGUAGE:
-    cargo test -q {{PLATFORM}} --features {{LANGUAGE}}
+    cargo test {{PLATFORM}} --features {{LANGUAGE}}
 
 # Build the mozart image
 dbuild LANGUAGE:
