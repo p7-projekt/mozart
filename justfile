@@ -24,3 +24,7 @@ dbuild LANGUAGE:
 # Runs the mozart container
 drun LANGUAGE:
     docker run -p 8080:8080 -d {{LANGUAGE}}
+
+# Compile and open documentation.
+doc LANGUAGE="default":
+    cargo doc --open --document-private-items --features {{LANGUAGE}}
