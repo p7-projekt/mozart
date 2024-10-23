@@ -68,7 +68,7 @@ mod timeout_process {
             .arg("1")
             .spawn()
             .expect("failed to spawn process");
-        let duration = Duration::from_millis(900);
+        let duration = Duration::from_millis(100);
         let expected = None;
 
         let actual = timeout_process(duration, process).await?;
