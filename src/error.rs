@@ -10,7 +10,7 @@ use thiserror::Error;
 pub const UUID_SHOULD_BE_VALID_STR: &str = "a uuid should always be valid utf8 encoding";
 
 /// An error that occurs in relation to checking a submission.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum SubmissionError {
     /// Some sort of internal error occured.
     ///

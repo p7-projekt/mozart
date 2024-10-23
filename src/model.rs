@@ -70,7 +70,7 @@ pub enum ParameterType {
 }
 
 /// A test case result, indicating how a solution handled a given test case.
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TestCaseResult {
     /// The id of the test case.
