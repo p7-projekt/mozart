@@ -222,7 +222,7 @@ impl TestRunner {
         }
 
         // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in test_cases.iter().skip(test_cases.len()) {
+        for test_case in test_cases.iter().skip(test_case_results.len()) {
             debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
