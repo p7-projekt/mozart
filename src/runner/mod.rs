@@ -130,10 +130,34 @@ impl TestRunner {
         }
         debug!(?test_output);
 
+        let test_case_results =
+            TestRunner::parse_test_output(&test_output, &submission.test_cases)?;
+
+        if test_case_results
+            .iter()
+            .all(|tc| tc.test_result == TestResult::Pass)
+        {
+            info!("passed all test cases");
+            Ok(())
+        } else {
+            info!("did not pass all test cases");
+            Err(SubmissionError::Failure(test_case_results))
+        }
+    }
+
+    /// Parses the internal format produces by running test cases against a solution.
+    ///
+    /// # Errors
+    /// An `Ok` result indicates that the test output was correctly parsed.
+    /// An `Err` result indicates that the output file was formatted in a wrong way, and was unparseable.
+    fn parse_test_output(
+        test_output: &str,
+        test_cases: &[TestCase],
+    ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         info!("parsing output file");
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
-            let test_case = &submission.test_cases[index];
+            let test_case = &test_cases[index];
 
             if line.trim().is_empty() {
                 error!("empty line in output file for test case '{}'", test_case.id);
@@ -177,9 +201,9 @@ impl TestRunner {
         }
 
         // extrapolating that a testcase caused a runtime error
-        if test_case_results.len() != submission.test_cases.len() {
+        if test_case_results.len() != test_cases.len() {
             let index = test_case_results.len();
-            let test_case = &submission.test_cases[index];
+            let test_case = &test_cases[index];
             info!(
                 "the submission had a runtime error in test case '{:?}'",
                 test_case
@@ -192,11 +216,7 @@ impl TestRunner {
         }
 
         // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in submission
-            .test_cases
-            .iter()
-            .skip(submission.test_cases.len())
-        {
+        for test_case in test_cases.iter().skip(test_cases.len()) {
             debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
@@ -206,18 +226,6 @@ impl TestRunner {
         }
 
         debug!(?test_case_results);
-
-        if test_case_results
-            .iter()
-            .all(|tc| tc.test_result == TestResult::Pass)
-        {
-            info!("passed all test cases");
-            Ok(())
-        } else {
-            info!("did not pass all test cases");
-            Err(SubmissionError::Failure(
-                test_case_results.into_boxed_slice(),
-            ))
-        }
+        Ok(test_case_results.into_boxed_slice())
     }
 }
