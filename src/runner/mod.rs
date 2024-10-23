@@ -155,6 +155,12 @@ impl TestRunner {
         test_cases: &[TestCase],
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         info!("parsing output file");
+
+        if test_output.trim().is_empty() {
+            error!("test output file is empty");
+            return Err(SubmissionError::Internal);
+        }
+
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
             let test_case = &test_cases[index];
