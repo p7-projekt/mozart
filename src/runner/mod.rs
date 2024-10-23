@@ -246,6 +246,15 @@ mod parse_output_file {
         },
     };
 
+    /// A test util function to make a test case with the supplied `id` and empty parameters.
+    fn empty_test_case(id: u64) -> TestCase {
+        TestCase {
+            id,
+            input_parameters: Box::new([]),
+            output_parameters: Box::new([]),
+        }
+    }
+
     #[test]
     fn empty_file() {
         let test_output = "";
@@ -270,23 +279,7 @@ mod parse_output_file {
     fn empty_line() {
         let test_output = ["p", "", "p"].join("\n");
         // the parameters are not necessary for this test, only the test case id
-        let test_cases = [
-            TestCase {
-                id: 0,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 1,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 2,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-        ];
+        let test_cases = [empty_test_case(0), empty_test_case(1), empty_test_case(2)];
         let expected = Err(SubmissionError::Internal);
 
         let actual = TestRunner::parse_test_output(&test_output, &test_cases);
@@ -298,11 +291,7 @@ mod parse_output_file {
     fn failure_outcome_without_actual_and_expected() {
         let test_output = ["f"].join("\n");
         // the parameters are not necessary for this test, only the test case id
-        let test_cases = [TestCase {
-            id: 0,
-            input_parameters: Box::new([]),
-            output_parameters: Box::new([]),
-        }];
+        let test_cases = [empty_test_case(0)];
         let expected = Err(SubmissionError::Internal);
 
         let actual = TestRunner::parse_test_output(&test_output, &test_cases);
@@ -314,11 +303,7 @@ mod parse_output_file {
     fn failure_outcome_with_actual_but_without_expected() {
         let test_output = ["f,5"].join("\n");
         // the parameters are not necessary for this test, only the test case id
-        let test_cases = [TestCase {
-            id: 0,
-            input_parameters: Box::new([]),
-            output_parameters: Box::new([]),
-        }];
+        let test_cases = [empty_test_case(0)];
         let expected = Err(SubmissionError::Internal);
 
         let actual = TestRunner::parse_test_output(&test_output, &test_cases);
@@ -330,18 +315,7 @@ mod parse_output_file {
     fn unknown_test_output() {
         let test_output = ["p", "r"].join("\n");
         // the parameters are not necessary for this test, only the test case id
-        let test_cases = [
-            TestCase {
-                id: 0,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 1,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-        ];
+        let test_cases = [empty_test_case(0), empty_test_case(1)];
         let expected = Err(SubmissionError::Internal);
 
         let actual = TestRunner::parse_test_output(&test_output, &test_cases);
@@ -357,18 +331,7 @@ mod parse_output_file {
     fn runtime_error_in_last_test_case() -> Result<(), SubmissionError> {
         let test_output = ["p"].join("\n");
         // the parameters are not necessary for this test, only the test case id
-        let test_cases = [
-            TestCase {
-                id: 0,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 1,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-        ];
+        let test_cases = [empty_test_case(0), empty_test_case(1)];
         let expected = Box::new([
             TestCaseResult {
                 id: 0,
@@ -419,31 +382,11 @@ mod parse_output_file {
         let test_output = ["p", "p", "p", "p", "p"].join("\n");
         // the parameters are not necessary for this test, only the test case id
         let test_cases = [
-            TestCase {
-                id: 0,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 1,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 2,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 3,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
-            TestCase {
-                id: 4,
-                input_parameters: Box::new([]),
-                output_parameters: Box::new([]),
-            },
+            empty_test_case(0),
+            empty_test_case(1),
+            empty_test_case(2),
+            empty_test_case(3),
+            empty_test_case(4),
         ];
         let expected = Box::new([
             TestCaseResult {
