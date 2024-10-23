@@ -167,3 +167,16 @@ mod status {
         assert!(actual.body().is_end_stream());
     }
 }
+
+#[cfg(test)]
+mod haskell {
+    // example integration test cases
+    // - all test cases pass (for all data types)
+    // - all test cases wrong answer (for all data types)
+    // - runtime error in no last test case
+    // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something)
+    // - solution with multiple different data types as output
+    // - compilation error
+    // - timeout error on execution (i think compilation is impossible to check unfortunately)
+    // - mix of pass and fail test cases + runtime error at some point
+}
