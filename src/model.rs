@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A submission provided by the backend.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Submission {
     /// The user submitted solution.
@@ -16,7 +16,7 @@ pub struct Submission {
 }
 
 /// A test case for a given exercise.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TestCase {
     /// The test case id, this is not relevant for mozart, but knowing which test cases failed,
@@ -70,7 +70,7 @@ pub enum ParameterType {
 }
 
 /// A test case result, indicating how a solution handled a given test case.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TestCaseResult {
     /// The id of the test case.
@@ -82,7 +82,7 @@ pub struct TestCaseResult {
 }
 
 /// The different outcomes of a test case.
-#[derive(Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase", tag = "testResult")]
 pub enum TestResult {
     /// The test case passed.
@@ -98,7 +98,7 @@ pub enum TestResult {
 }
 
 /// The reason why a given test case failed.
-#[derive(Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase", tag = "cause", content = "details")]
 pub enum TestCaseFailureReason {
     /// The answer to the test case was incorrect.

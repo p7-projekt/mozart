@@ -6,12 +6,12 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// A submission result indicates the result of checking a given submission.
 ///
 /// This is an outward facing object, as it is serialized to JSON in the HTTP response for a given request.
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(tag = "result", content = "reason")]
 pub enum SubmissionResult {
     /// A submission successfully passed all test cases.
