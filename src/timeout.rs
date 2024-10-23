@@ -1,3 +1,5 @@
+//! Contains functions related to timeout of a process.
+
 use crate::error::SubmissionError;
 use std::{
     process::{ExitStatus, Output},
