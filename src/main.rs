@@ -46,7 +46,7 @@ fn app() -> Router {
         .layer(
             TraceLayer::new_for_http().make_span_with(|_: &Request<Body>| {
                 let request_id = Uuid::new_v4();
-                info_span!("request", %request_id)
+                info_span!("", %request_id)
             }),
         )
 }
@@ -79,7 +79,7 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     debug!(?submission);
 
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
-    info!("request unique directory: {:?}", temp_dir);
+    info!("unique directory: {:?}", temp_dir);
 
     if let Err(err) = fs::create_dir(temp_dir.as_path()) {
         error!("could not create temporary working directory: {}", err);
