@@ -174,9 +174,87 @@ mod haskell {
     // - all test cases pass (for all data types)
     // - all test cases wrong answer (for all data types)
     // - runtime error in no last test case
-    // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something)
+    // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something) +
     // - solution with multiple different data types as output
     // - compilation error
     // - timeout error on execution (i think compilation is impossible to check unfortunately)
     // - mix of pass and fail test cases + runtime error at some point
+
+    use crate::{
+        app,
+        model::{Parameter, ParameterType, Submission, TestCase},
+        response::SubmissionResult,
+    };
+    use axum::{
+        body::{to_bytes, Body},
+        http::{request::Builder, Method, StatusCode},
+    };
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn solution_with_all_data_types_as_input() {
+        let mozart = app();
+        let solution = [
+            "solution :: Int -> Float -> Bool -> Char -> String -> String",
+            "solution int float bool char string = show int ++ show float ++ show bool ++ [char] ++ string"
+        ].join("\n");
+        let test_cases = Box::new([TestCase {
+            id: 0,
+            input_parameters: Box::new([
+                Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                },
+                Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("5.5"),
+                },
+                Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("true"),
+                },
+                Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("f"),
+                },
+                Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("hello"),
+                },
+            ]),
+            output_parameters: Box::new([Parameter {
+                value_type: ParameterType::String,
+                value: String::from("105.5Truefhello"),
+            }]),
+        }]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_body = SubmissionResult::Pass;
+        let expected_status = StatusCode::OK;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
 }
