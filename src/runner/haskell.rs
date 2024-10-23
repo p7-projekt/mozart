@@ -1,18 +1,22 @@
+//! Contains the language specific implementation for the Haskell programming language.
+
 use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
     timeout::timeout_process,
 };
-use std::{
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::Duration,
-};
+use std::{path::PathBuf, process::Stdio, time::Duration};
+use tokio::process::Command;
 use tracing::{debug, error, info};
 
+/// The timeout duration for the compilation and execution process.
 const TIMEOUT: Duration = Duration::from_secs(5);
 
+/// The base test 'runner' code for Haskell.
+///
+/// The markers `SOLUTION`, `TEST_CASES`, and `OUTPUT_FILE_PATH` are being substituted
+/// at runtime with the request specific values.
 const HASKELL_BASE_TEST_CODE: &str = r###"
 SOLUTION
 
@@ -25,7 +29,9 @@ testChecker actual expected = do
     else appendFile "OUTPUT_FILE_PATH" ("f" ++ "," ++ show actual ++ "," ++ show expected ++ "\n")
 "###;
 
+/// The language handler for Haskell.
 pub struct Haskell {
+    /// A path buffer to the current working directory of a given request.
     temp_dir: PathBuf,
 }
 
@@ -79,8 +85,8 @@ impl LanguageHandler for Haskell {
     fn format_parameter(&self, parameter: &Parameter) -> String {
         match parameter.value_type {
             ParameterType::Int | ParameterType::Float => format!("({})", parameter.value),
-            ParameterType::Char => format!("('{}')", parameter.value),
-            ParameterType::String => format!(r#"("{}")"#, parameter.value),
+            ParameterType::Char => format!("'{}'", parameter.value),
+            ParameterType::String => format!(r#""{}""#, parameter.value),
             ParameterType::Bool => {
                 let mut chars = parameter.value.chars();
                 match chars.next() {
@@ -93,7 +99,7 @@ impl LanguageHandler for Haskell {
 
     async fn run(&self) -> Result<(), SubmissionError> {
         let mut executable_path = self.temp_dir.clone();
-        executable_path.push("/test");
+        executable_path.push("test");
         let executable_str = executable_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
         let test_file_path = self.test_file_path();
         let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
@@ -187,5 +193,127 @@ impl LanguageHandler for Haskell {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod format_parameter {
+    use super::Haskell;
+    use crate::{
+        model::{Parameter, ParameterType},
+        runner::LanguageHandler,
+    };
+    use std::path::PathBuf;
+
+    #[test]
+    fn bool_false() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Bool,
+            value: String::from("false"),
+        };
+        let expected = String::from("False");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn bool_true() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Bool,
+            value: String::from("true"),
+        };
+        let expected = String::from("True");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn int_positive() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("100"),
+        };
+        let expected = String::from("(100)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn int_negative() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("-100"),
+        };
+        let expected = String::from("(-100)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn float_positive() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Float,
+            value: String::from("10.0"),
+        };
+        let expected = String::from("(10.0)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn float_negative() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Float,
+            value: String::from("-10.0"),
+        };
+        let expected = String::from("(-10.0)");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn char() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::Char,
+            value: String::from("a"),
+        };
+        let expected = String::from("'a'");
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn string() {
+        let haskell = Haskell::new(PathBuf::new());
+        let input = Parameter {
+            value_type: ParameterType::String,
+            value: String::from("hello"),
+        };
+        let expected = String::from(r#""hello""#);
+
+        let actual = haskell.format_parameter(&input);
+
+        assert_eq!(actual, expected);
     }
 }

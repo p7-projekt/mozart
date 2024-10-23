@@ -1,15 +1,17 @@
 use axum::{
-    http::StatusCode,
+    body::Body,
+    http::{Request, StatusCode},
     routing::{get, post},
     serve, Json, Router,
 };
 use error::SubmissionError;
-use model::{Submission, TestResult};
+use model::Submission;
 use response::SubmissionResult;
 use runner::TestRunner;
 use std::{fs, path::PathBuf};
 use tokio::net::TcpListener;
-use tracing::{debug, error, info, span, Level};
+use tower_http::trace::TraceLayer;
+use tracing::{debug, error, info, info_span};
 use uuid::Uuid;
 
 mod error;
@@ -33,12 +35,23 @@ fn main() {
     start();
 }
 
+/// Defines the routing of mozart.
+///
+/// Mainly exists as a standalone function due to logical reasoning,
+/// and to make it easier to write test cases that 'ping' the router.
 fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
         .route("/status", get(status))
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|_: &Request<Body>| {
+                let request_id = Uuid::new_v4();
+                info_span!("request", %request_id)
+            }),
+        )
 }
 
+/// This functions starts the actual server and will not return for as long as the server is running.
 #[tokio::main]
 async fn start() {
     let mozart = app();
@@ -50,19 +63,23 @@ async fn start() {
         .expect("failed to start mozart");
 }
 
+/// An endpoint that exists to quickly assert whether mozart is still healthy.
+///
+/// This does not have any purpose for mozart itself, instead it is used as
+/// part of the k3s deployment to ensure health of the individual mozart instances.
 async fn status() -> StatusCode {
     info!("performed status check");
     StatusCode::OK
 }
 
+/// The endpoint used to check a given submission against a set of test cases.
 async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let uuid = Uuid::new_v4();
-    let span = span!(Level::TRACE, "", %uuid);
-    let _enter = span.enter();
 
     debug!(?submission);
 
     let temp_dir = PathBuf::from(format!("{}/{}", PARENT_DIR, uuid));
+    info!("request unique directory: {:?}", temp_dir);
 
     if let Err(err) = fs::create_dir(temp_dir.as_path()) {
         error!("could not create temporary working directory: {}", err);
@@ -72,21 +89,10 @@ async fn submit(Json(submission): Json<Submission>) -> SubmissionResult {
     let runner = TestRunner::new(temp_dir.clone());
 
     info!("checking submission");
-    let response = match runner.check(submission).await {
-        Ok(test_case_results) => {
-            debug!(?test_case_results);
-            if test_case_results
-                .iter()
-                .all(|tc| tc.test_result == TestResult::Pass)
-            {
-                info!("passed all test cases");
-                SubmissionResult::Pass
-            } else {
-                info!("did not pass all test cases");
-                SubmissionResult::Failure(test_case_results)
-            }
-        }
-        Err(err) => SubmissionResult::from(err),
+    let response = if let Err(err) = runner.check(submission).await {
+        SubmissionResult::from(err)
+    } else {
+        SubmissionResult::Pass
     };
 
     if let Err(err) = fs::remove_dir_all(temp_dir.as_path()) {

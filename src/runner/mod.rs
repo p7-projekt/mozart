@@ -1,3 +1,5 @@
+//! Defines the components necessary for the language agnostic test runner to exist.
+
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
@@ -54,12 +56,16 @@ pub trait LanguageHandler {
     async fn run(&self) -> Result<(), SubmissionError>;
 }
 
+/// The runner responsible for testing a solution against a set of test cases.
+///
+/// The underlying language being tested is determined at compile time via feature flags.
 pub struct TestRunner {
     #[cfg(feature = "haskell")]
     handler: Haskell,
 }
 
 impl TestRunner {
+    /// Create a new test runner, based on the enabled feature flag for toggling languages.
     pub fn new(temp_dir: PathBuf) -> Self {
         Self {
             #[cfg(feature = "haskell")]
@@ -67,10 +73,12 @@ impl TestRunner {
         }
     }
 
-    pub async fn check(
-        self,
-        submission: Submission,
-    ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
+    /// Checks a given submissmion against the provided test cases.
+    ///
+    /// # Errors
+    /// An `Ok` result indicates that all test cases were passed.
+    /// An `Err` result can indicate a number of things specified in the variants of `[SubmissionError]`.
+    pub async fn check(self, submission: Submission) -> Result<(), SubmissionError> {
         info!("creating test file");
         let mut test_file = match File::create(self.handler.test_file_path()) {
             Ok(tf) => tf,
@@ -92,17 +100,16 @@ impl TestRunner {
         };
 
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-        let (solution, test_cases) = submission.into_inner();
 
         info!("generating language specific test cases");
-        let generated_test_cases = self.handler.generate_test_cases(&test_cases);
+        let generated_test_cases = self.handler.generate_test_cases(&submission.test_cases);
         debug!(?generated_test_cases);
 
         info!("combining final test code");
         let final_test_code = self
             .handler
             .base_test_code()
-            .replace(SOLUTION_TARGET, solution.as_str())
+            .replace(SOLUTION_TARGET, &submission.solution)
             .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
             .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
         debug!(?final_test_code);
@@ -126,7 +133,7 @@ impl TestRunner {
         info!("parsing output file");
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
-            let test_case = &test_cases[index];
+            let test_case = &submission.test_cases[index];
 
             if line.trim().is_empty() {
                 error!("empty line in output file for test case '{}'", test_case.id);
@@ -170,9 +177,9 @@ impl TestRunner {
         }
 
         // extrapolating that a testcase caused a runtime error
-        if test_case_results.len() != test_cases.len() {
+        if test_case_results.len() != submission.test_cases.len() {
             let index = test_case_results.len();
-            let test_case = &test_cases[index];
+            let test_case = &submission.test_cases[index];
             info!(
                 "the submission had a runtime error in test case '{:?}'",
                 test_case
@@ -185,7 +192,11 @@ impl TestRunner {
         }
 
         // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in test_cases.iter().skip(test_cases.len()) {
+        for test_case in submission
+            .test_cases
+            .iter()
+            .skip(submission.test_cases.len())
+        {
             debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
@@ -194,6 +205,19 @@ impl TestRunner {
             test_case_results.push(result);
         }
 
-        Ok(test_case_results.into_boxed_slice())
+        debug!(?test_case_results);
+
+        if test_case_results
+            .iter()
+            .all(|tc| tc.test_result == TestResult::Pass)
+        {
+            info!("passed all test cases");
+            Ok(())
+        } else {
+            info!("did not pass all test cases");
+            Err(SubmissionError::Failure(
+                test_case_results.into_boxed_slice(),
+            ))
+        }
     }
 }
