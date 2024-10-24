@@ -168,7 +168,7 @@ mod status {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "haskell"))]
 mod haskell {
     // example integration test cases
     // - all test cases pass (for all data types)
