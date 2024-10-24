@@ -71,7 +71,7 @@ impl LanguageHandler for Haskell {
                 .iter()
                 .map(|op| self.format_parameter(op))
                 .collect::<Vec<String>>()
-                .join(" ");
+                .join(",");
 
             let generated_test_case = format!(
                 "  testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})"
