@@ -192,6 +192,23 @@ mod haskell {
     use tower::ServiceExt;
 
     #[tokio::test]
+    async fn invalid_http_method() {
+        let mozart = app();
+        let expected_status_code = StatusCode::METHOD_NOT_ALLOWED;
+        let request = Builder::new()
+            .method(Method::GET)
+            .uri("/submit")
+            .body(Body::empty())
+            .expect("failed to build request");
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to await oneshot");
+
+        assert_eq!(actual.status(), expected_status_code);
+    }
+    #[tokio::test]
     async fn solution_with_all_data_types_as_input() {
         let mozart = app();
         let solution = [
