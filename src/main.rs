@@ -226,6 +226,25 @@ mod haskell {
 
         assert_eq!(actual.status(), expected_status_code);
     }
+
+    #[tokio::test]
+    async fn empty_request_body() {
+        let mozart = app();
+        let expected_status_code = StatusCode::BAD_REQUEST;
+        let request = Builder::new()
+            .method(Method::POST)
+            .header("Content-Type", "application/json")
+            .uri("/submit")
+            .body(Body::empty())
+            .expect("failed to build request");
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to await oneshot");
+
+        assert_eq!(actual.status(), expected_status_code);
+    }
     #[tokio::test]
     async fn solution_with_all_data_types_as_input() {
         let mozart = app();
