@@ -257,4 +257,69 @@ mod haskell {
         assert_eq!(actual_status, expected_status);
         assert_eq!(actual_body, expected_body);
     }
+
+    #[tokio::test]
+    async fn solution_with_all_data_types_as_output_and_no_input() {
+        let mozart = app();
+        let solution = [
+            "solution :: (Int, Float, Bool, Char, String)",
+            r#"solution = (7, 8.6, True, 'a', "hhh")"#,
+        ]
+        .join("\n");
+        let test_cases = Box::new([TestCase {
+            id: 0,
+            input_parameters: Box::new([]),
+            output_parameters: Box::new([
+                Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("7"),
+                },
+                Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("8.6"),
+                },
+                Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("true"),
+                },
+                Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("a"),
+                },
+                Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("hhh"),
+                },
+            ]),
+        }]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_body = SubmissionResult::Pass;
+        let expected_status = StatusCode::OK;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
 }
