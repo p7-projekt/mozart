@@ -245,6 +245,27 @@ mod haskell {
 
         assert_eq!(actual.status(), expected_status_code);
     }
+
+    #[tokio::test]
+    async fn invalid_json() {
+        let mozart = app();
+        let expected_status_code = StatusCode::UNPROCESSABLE_ENTITY;
+        let body = serde_json::to_string(&ParameterType::Int).expect("failed to serialize body");
+        let request = Builder::new()
+            .method(Method::POST)
+            .header("Content-Type", "application/json")
+            .uri("/submit")
+            .body(body)
+            .expect("failed to build request");
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to await oneshot");
+
+        assert_eq!(actual.status(), expected_status_code);
+    }
+
     #[tokio::test]
     async fn solution_with_all_data_types_as_input() {
         let mozart = app();
