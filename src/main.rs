@@ -208,6 +208,24 @@ mod haskell {
 
         assert_eq!(actual.status(), expected_status_code);
     }
+
+    #[tokio::test]
+    async fn no_json_header() {
+        let mozart = app();
+        let expected_status_code = StatusCode::UNSUPPORTED_MEDIA_TYPE;
+        let request = Builder::new()
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::empty())
+            .expect("failed to build request");
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to await oneshot");
+
+        assert_eq!(actual.status(), expected_status_code);
+    }
     #[tokio::test]
     async fn solution_with_all_data_types_as_input() {
         let mozart = app();
