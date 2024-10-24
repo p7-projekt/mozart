@@ -177,7 +177,8 @@ mod haskell {
     // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something) +
     // - solution with multiple different data types as output +
     // - compilation error +
-    // - timeout error on execution (i think compilation is impossible to check unfortunately)
+    // - timeout error on execution
+    // - timeout error on compilation +
     // - mix of pass and fail test cases + runtime error at some point
 
     use crate::{
@@ -463,6 +464,77 @@ mod haskell {
 
         if let SubmissionResult::Error(err) = actual_body {
             assert!(err.starts_with("an error occurred during compilation:"));
+        } else {
+            panic!("response body was not of error variant");
+        }
+    }
+
+    #[tokio::test]
+    async fn compile_timeout() {
+        let mozart = app();
+        let repeated = "  + x\n".repeat(10000);
+        let solution = [
+            "solution :: Int -> Int",
+            "solution x =",
+            "  x",
+            repeated.as_str(),
+        ]
+        .join("\n");
+        // the contents of the test cases are entirely irrelevant
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+
+        if let SubmissionResult::Error(err) = actual_body {
+            assert!(err.starts_with("compilation exceeded the timeout limit of"));
         } else {
             panic!("response body was not of error variant");
         }
