@@ -5,13 +5,11 @@ default:
 
 # Build and execute crate
 dev LANGUAGE:
-    MOZART_LOG=TRACE cargo build --locked --release {{PLATFORM}} --features {{LANGUAGE}}
-    ./target/x86_64-unknown-linux-musl/release/mozart
+    MOZART_LOG=TRACE cargo run --locked --release {{PLATFORM}} --features {{LANGUAGE}}
 
 # Build and execute crate
 run LANGUAGE:
-    cargo build --locked --release {{PLATFORM}} --features {{LANGUAGE}}
-    ./target/x86_64-unknown-linux-musl/release/mozart
+    cargo run --locked --release {{PLATFORM}} --features {{LANGUAGE}}
 
 # Run test cases
 test LANGUAGE:
