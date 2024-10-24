@@ -23,7 +23,7 @@ pub enum SubmissionError {
     /// There was an error during the compilation of the submitted solution.
     ///
     /// The provided `String` should contain the underlying compilation error.
-    #[error("an error occured during compilation: {0}")]
+    #[error("an error occurred during compilation: {0}")]
     Compilation(String),
 
     /// The compilation process exceeded the set timeout, and was therefore stopped prematurely.
