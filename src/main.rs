@@ -173,7 +173,7 @@ mod haskell {
     // example integration test cases
     // - all test cases pass (for all data types)
     // - all test cases wrong answer (for all data types)
-    // - runtime error in no last test case
+    // - runtime error in non last test case
     // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something) +
     // - solution with multiple different data types as output +
     // - compilation error +
