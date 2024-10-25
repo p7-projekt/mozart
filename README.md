@@ -41,6 +41,8 @@ Here, the `{{LANGUAGE}}` refers to the language instance you want to enable, for
 
 Depending on how you installed your language compiler/interpreter, you may need to run mozart as a super user, to access its dependencies.
 
+During development you can change the log level via the `MOZART_LOG` environment variable - it is set to `info` by default.
+
 # Adding a Language
 
 Mozart is designed to relatively easily support a new language. You need to:
