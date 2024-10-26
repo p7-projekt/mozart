@@ -417,7 +417,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Int,
                     value: String::from("-10"),
@@ -488,7 +488,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Int,
                     value: String::from("-10"),
@@ -552,7 +552,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Int,
                     value: String::from("-10"),
@@ -615,7 +615,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Int,
                     value: String::from("5"),
@@ -674,7 +674,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Bool,
                     value: String::from("false"),
@@ -733,7 +733,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Float,
                     value: String::from("3.3"),
@@ -792,7 +792,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::Char,
                     value: String::from("b"),
@@ -851,7 +851,7 @@ mod haskell {
                 }]),
             },
             TestCase {
-                id: 0,
+                id: 1,
                 input_parameters: Box::new([Parameter {
                     value_type: ParameterType::String,
                     value: String::from("world"),
