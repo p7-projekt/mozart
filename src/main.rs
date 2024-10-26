@@ -171,14 +171,8 @@ mod status {
 #[cfg(all(test, feature = "haskell"))]
 mod haskell {
     // example integration test cases
-    // - all test cases pass (for all data types)
     // - all test cases wrong answer (for all data types)
     // - runtime error in non last test case
-    // - solution with multiple different data types as input (possibly one with all different data types, like a string creation exercise or something) +
-    // - solution with multiple different data types as output +
-    // - compilation error +
-    // - timeout error on execution +
-    // - timeout error on compilation +
     // - mix of pass and fail test cases + runtime error at some point
 
     use crate::{
@@ -602,5 +596,300 @@ mod haskell {
         } else {
             panic!("response body was not of error variant");
         }
+    }
+
+    #[tokio::test]
+    async fn all_test_cases_pass_int() {
+        let mozart = app();
+        let solution = ["solution :: Int -> Int", "solution x = x + x"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("20"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Pass;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
+
+    #[tokio::test]
+    async fn all_test_cases_pass_bool() {
+        let mozart = app();
+        let solution = ["solution :: Bool -> Bool", "solution b = not b"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("true"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("false"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("false"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Bool,
+                    value: String::from("true"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Pass;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
+
+    #[tokio::test]
+    async fn all_test_cases_pass_float() {
+        let mozart = app();
+        let solution = ["solution :: Float -> Float", "solution f = f + f"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("2.5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("5.0"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("3.3"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Float,
+                    value: String::from("6.6"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Pass;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
+
+    #[tokio::test]
+    async fn all_test_cases_pass_char() {
+        let mozart = app();
+        let solution = ["solution :: Char -> Char", "solution c = c"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("a"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("a"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("b"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Char,
+                    value: String::from("b"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Pass;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
+
+    #[tokio::test]
+    async fn all_test_cases_pass_string() {
+        let mozart = app();
+        let solution = ["solution :: String -> String", "solution s = s ++ s"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("hello"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("hellohello"),
+                }]),
+            },
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("world"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::String,
+                    value: String::from("worldworld"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Pass;
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
     }
 }
