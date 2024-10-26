@@ -171,8 +171,6 @@ mod status {
 #[cfg(all(test, feature = "haskell"))]
 mod haskell {
     // example integration test cases
-    // - all test cases wrong answer (for all data types)
-    // - runtime error in non last test case
     // - mix of pass and fail test cases + runtime error at some point
 
     use crate::{
@@ -1286,6 +1284,89 @@ mod haskell {
                     actual: String::from(r#""world""#),
                     expected: String::from(r#""worldworld""#),
                 }),
+            },
+        ]));
+
+        let actual = mozart
+            .oneshot(request)
+            .await
+            .expect("failed to execute oneshot request");
+
+        let actual_status = actual.status();
+        let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+            .await
+            .expect("failed to convert body to bytes");
+
+        let actual_body: SubmissionResult =
+            serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+        assert_eq!(actual_status, expected_status);
+        assert_eq!(actual_body, expected_body);
+    }
+
+    #[tokio::test]
+    async fn runtime_error_in_non_last_test_case() {
+        let mozart = app();
+        let solution = ["solution :: Int -> Int", "solution i = 10 `div` i"].join("\n");
+        let test_cases = Box::new([
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("2"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+            },
+            TestCase {
+                id: 1,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("0"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("0"),
+                }]),
+            },
+            TestCase {
+                id: 2,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("2"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+            },
+        ]);
+        let submission = Submission {
+            solution,
+            test_cases,
+        };
+        let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+        let request = Builder::new()
+            .header("Content-Type", "application/json")
+            .method(Method::POST)
+            .uri("/submit")
+            .body(Body::from(body))
+            .expect("failed to build request");
+        let expected_status = StatusCode::OK;
+        let expected_body = SubmissionResult::Failure(Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Unknown,
             },
         ]));
 
