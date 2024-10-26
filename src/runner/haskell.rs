@@ -11,7 +11,7 @@ use tokio::process::Command;
 use tracing::{debug, error, info};
 
 /// The timeout duration for the compilation and execution process.
-const TIMEOUT: Duration = Duration::from_secs(5);
+const TIMEOUT: Duration = Duration::from_secs(10);
 
 /// The base test 'runner' code for Haskell.
 ///
