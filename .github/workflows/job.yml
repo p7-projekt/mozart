@@ -32,6 +32,11 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
 
+      - name: Install GHC for runtime
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.8.2'
+
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
