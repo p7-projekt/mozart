@@ -467,7 +467,7 @@ mod haskell {
     #[tokio::test]
     async fn compile_timeout() {
         let mozart = app();
-        let repeated = "  + x\n".repeat(20000);
+        let repeated = "  + x\n".repeat(100000);
         let solution = [
             "solution :: Int -> Int",
             "solution x =",
