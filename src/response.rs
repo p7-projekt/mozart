@@ -104,37 +104,31 @@ impl<'de> de::Deserialize<'de> for SubmissionResult {
             where
                 V: de::MapAccess<'de>,
             {
-                let mut result: Option<String> = None;
-                let mut test_case_results: Option<Box<[TestCaseResult]>> = None;
-                let mut message: Option<String> = None;
-
-                while let Some(key) = map.next_key::<String>()? {
-                    match key.as_str() {
-                        "result" => {
-                            result = Some(map.next_value()?);
-                        }
-                        "testCaseResults" => {
-                            test_case_results = Some(map.next_value()?);
-                        }
-                        "message" => {
-                            message = Some(map.next_value()?);
-                        }
-                        _ => {
-                            let _: serde::de::IgnoredAny = map.next_value()?;
+                match map.next_entry::<&str, &str>()? {
+                    Some(("result", "pass")) => Ok(SubmissionResult::Pass),
+                    Some(("result", "failure")) => {
+                        if map
+                            .next_key()
+                            .is_ok_and(|o| o.is_some_and(|k: &str| k == "testCaseResults"))
+                        {
+                            let test_case_results = map.next_value()?;
+                            Ok(SubmissionResult::Failure(test_case_results))
+                        } else {
+                            Err(de::Error::missing_field("testCaseResults"))
                         }
                     }
-                }
-
-                match result.as_deref() {
-                    Some("pass") => Ok(SubmissionResult::Pass),
-                    Some("failure") => Ok(SubmissionResult::Failure(
-                        test_case_results
-                            .ok_or_else(|| de::Error::missing_field("testCaseResults"))?,
-                    )),
-                    Some("error") => Ok(SubmissionResult::Error(
-                        message.ok_or_else(|| de::Error::missing_field("message"))?,
-                    )),
-                    _ => Err(de::Error::custom("unknown variant for SubmissionResult")),
+                    Some(("result", "error")) => {
+                        if map
+                            .next_key()
+                            .is_ok_and(|o| o.is_some_and(|k: &str| k == "message"))
+                        {
+                            let message = map.next_value()?;
+                            Ok(SubmissionResult::Error(message))
+                        } else {
+                            Err(de::Error::missing_field("message"))
+                        }
+                    }
+                    _ => Err(de::Error::custom("mission result field or invalid value")),
                 }
             }
         }
