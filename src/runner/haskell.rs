@@ -10,8 +10,13 @@ use std::{path::PathBuf, process::Stdio, time::Duration};
 use tokio::process::Command;
 use tracing::{debug, error, info};
 
+#[cfg(not(feature = "ci"))]
 /// The timeout duration for the compilation and execution process.
 const TIMEOUT: Duration = Duration::from_secs(5);
+
+#[cfg(feature = "ci")]
+/// The timeout duration used during pipeline workflows.
+const TIMEOUT: Duration = Duration::from_secs(30);
 
 /// The base test 'runner' code for Haskell.
 ///
