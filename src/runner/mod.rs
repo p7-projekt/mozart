@@ -156,10 +156,10 @@ impl TestRunner {
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         info!("parsing output file");
 
-        if test_output.trim().is_empty() {
-            error!("test output file is empty");
-            return Err(SubmissionError::Internal);
-        }
+        // if test_output.trim().is_empty() {
+        //     error!("test output file is empty");
+        //     return Err(SubmissionError::Internal);
+        // }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
@@ -256,26 +256,6 @@ mod parse_output_file {
     }
 
     #[test]
-    fn empty_file() {
-        let test_output = "";
-        let expected = Err(SubmissionError::Internal);
-
-        let actual = TestRunner::parse_test_output(test_output, &[]);
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn only_newline() {
-        let test_output = "\n";
-        let expected = Err(SubmissionError::Internal);
-
-        let actual = TestRunner::parse_test_output(test_output, &[]);
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
     fn empty_line() {
         let test_output = ["p", "", "p"].join("\n");
         // the parameters are not necessary for this test, only the test case id
@@ -323,10 +303,6 @@ mod parse_output_file {
         assert_eq!(actual, expected);
     }
 
-    // unsure how this should be handled as it would just be an empty output file
-    // #[test]
-    // fn runtime_error_in_first_test_case() {}
-
     #[test]
     fn runtime_error_in_last_test_case() -> Result<(), SubmissionError> {
         let test_output = ["p"].join("\n");
@@ -350,32 +326,45 @@ mod parse_output_file {
         Ok(())
     }
 
-    // what do we want to do in this scenario?
-    // do we just ignore the remaining test case outputs and only consider the first
-    // *n* outputs with n being the amount of test cases? or do we just throw an error
-    // because we cant be sure that they answered the solution correctly because of the
-    // difference in length between output and test cases
-    //
-    // #[test]
-    // fn less_test_cases_than_output_lines() -> Result<(), SubmissionError> {
-    //     let test_output = ["p", "p"].join("\n");
-    //     // the parameters are not necessary for this test, only the test case id
-    //     let test_cases = [TestCase {
-    //         id: 0,
-    //         input_parameters: Box::new([]),
-    //         output_parameters: Box::new([]),
-    //     }];
-    //     let expected = Box::new([TestCaseResult {
-    //         id: 0,
-    //         test_result: TestResult::Pass,
-    //     }]);
+    #[test]
+    fn runtime_error_in_first_test_case() -> Result<(), SubmissionError> {
+        let test_output = "";
+        let test_cases = [
+            empty_test_case(0),
+            empty_test_case(1),
+            empty_test_case(2),
+            empty_test_case(3),
+            empty_test_case(4),
+        ];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 3,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 4,
+                test_result: TestResult::Unknown,
+            },
+        ]);
 
-    //     let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
+        let actual = TestRunner::parse_test_output(test_output, &test_cases)?;
 
-    //     assert_eq!(*actual, *expected);
+        assert_eq!(*actual, *expected);
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     #[test]
     fn all_test_cases_passed() -> Result<(), SubmissionError> {
