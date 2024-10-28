@@ -130,10 +130,40 @@ impl TestRunner {
         }
         debug!(?test_output);
 
+        let test_case_results =
+            TestRunner::parse_test_output(&test_output, &submission.test_cases)?;
+
+        if test_case_results
+            .iter()
+            .all(|tc| tc.test_result == TestResult::Pass)
+        {
+            info!("passed all test cases");
+            Ok(())
+        } else {
+            info!("did not pass all test cases");
+            Err(SubmissionError::Failure(test_case_results))
+        }
+    }
+
+    /// Parses the internal format produces by running test cases against a solution.
+    ///
+    /// # Errors
+    /// An `Ok` result indicates that the test output was correctly parsed.
+    /// An `Err` result indicates that the output file was formatted in a wrong way, and was unparseable.
+    fn parse_test_output(
+        test_output: &str,
+        test_cases: &[TestCase],
+    ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         info!("parsing output file");
+
+        // if test_output.trim().is_empty() {
+        //     error!("test output file is empty");
+        //     return Err(SubmissionError::Internal);
+        // }
+
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
-            let test_case = &submission.test_cases[index];
+            let test_case = &test_cases[index];
 
             if line.trim().is_empty() {
                 error!("empty line in output file for test case '{}'", test_case.id);
@@ -177,9 +207,9 @@ impl TestRunner {
         }
 
         // extrapolating that a testcase caused a runtime error
-        if test_case_results.len() != submission.test_cases.len() {
+        if test_case_results.len() != test_cases.len() {
             let index = test_case_results.len();
-            let test_case = &submission.test_cases[index];
+            let test_case = &test_cases[index];
             info!(
                 "the submission had a runtime error in test case '{:?}'",
                 test_case
@@ -192,11 +222,7 @@ impl TestRunner {
         }
 
         // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in submission
-            .test_cases
-            .iter()
-            .skip(submission.test_cases.len())
-        {
+        for test_case in test_cases.iter().skip(test_case_results.len()) {
             debug!("test case '{}' is unknown", test_case.id);
             let result = TestCaseResult {
                 id: test_case.id,
@@ -206,18 +232,400 @@ impl TestRunner {
         }
 
         debug!(?test_case_results);
+        Ok(test_case_results.into_boxed_slice())
+    }
+}
 
-        if test_case_results
-            .iter()
-            .all(|tc| tc.test_result == TestResult::Pass)
-        {
-            info!("passed all test cases");
-            Ok(())
-        } else {
-            info!("did not pass all test cases");
-            Err(SubmissionError::Failure(
-                test_case_results.into_boxed_slice(),
-            ))
+#[cfg(test)]
+mod parse_output_file {
+    use super::TestRunner;
+    use crate::{
+        error::SubmissionError,
+        model::{
+            Parameter, ParameterType, TestCase, TestCaseFailureReason, TestCaseResult, TestResult,
+        },
+    };
+
+    /// A test util function to make a test case with the supplied `id` and empty parameters.
+    fn empty_test_case(id: u64) -> TestCase {
+        TestCase {
+            id,
+            input_parameters: Box::new([]),
+            output_parameters: Box::new([]),
         }
+    }
+
+    #[test]
+    fn empty_line() {
+        let test_output = ["p", "", "p"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0), empty_test_case(1), empty_test_case(2)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn failure_outcome_without_actual_and_expected() {
+        let test_output = ["f"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn failure_outcome_with_actual_but_without_expected() {
+        let test_output = ["f,5"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn unknown_test_output() {
+        let test_output = ["p", "r"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0), empty_test_case(1)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn runtime_error_in_last_test_case() -> Result<(), SubmissionError> {
+        let test_output = ["p"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0), empty_test_case(1)];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            },
+        ]);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
+
+        assert_eq!(*actual, *expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn runtime_error_in_first_test_case() -> Result<(), SubmissionError> {
+        let test_output = "";
+        let test_cases = [
+            empty_test_case(0),
+            empty_test_case(1),
+            empty_test_case(2),
+            empty_test_case(3),
+            empty_test_case(4),
+        ];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 3,
+                test_result: TestResult::Unknown,
+            },
+            TestCaseResult {
+                id: 4,
+                test_result: TestResult::Unknown,
+            },
+        ]);
+
+        let actual = TestRunner::parse_test_output(test_output, &test_cases)?;
+
+        assert_eq!(*actual, *expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn all_test_cases_passed() -> Result<(), SubmissionError> {
+        let test_output = ["p", "p", "p", "p", "p"].join("\n");
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [
+            empty_test_case(0),
+            empty_test_case(1),
+            empty_test_case(2),
+            empty_test_case(3),
+            empty_test_case(4),
+        ];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 3,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 4,
+                test_result: TestResult::Pass,
+            },
+        ]);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
+
+        assert_eq!(*actual, *expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn all_test_cases_wrong_answer() -> Result<(), SubmissionError> {
+        let test_output = ["f,5,-5", "f,10,-10", "f,7,-7", "f,-10,10", "f,-5,5"].join("\n");
+        let test_cases = [
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-5"),
+                }]),
+            },
+            TestCase {
+                id: 1,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-10"),
+                }]),
+            },
+            TestCase {
+                id: 2,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("7"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-7"),
+                }]),
+            },
+            TestCase {
+                id: 3,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+            },
+            TestCase {
+                id: 4,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+            },
+        ];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("5"),
+                    }]),
+                    actual: String::from("5"),
+                    expected: String::from("-5"),
+                }),
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("10"),
+                    }]),
+                    actual: String::from("10"),
+                    expected: String::from("-10"),
+                }),
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("7"),
+                    }]),
+                    actual: String::from("7"),
+                    expected: String::from("-7"),
+                }),
+            },
+            TestCaseResult {
+                id: 3,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("-10"),
+                    }]),
+                    actual: String::from("-10"),
+                    expected: String::from("10"),
+                }),
+            },
+            TestCaseResult {
+                id: 4,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("-5"),
+                    }]),
+                    actual: String::from("-5"),
+                    expected: String::from("5"),
+                }),
+            },
+        ]);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
+
+        assert_eq!(*actual, *expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn mixed_pass_and_failure_with_runtime_error() -> Result<(), SubmissionError> {
+        let test_output = ["p", "f,10,-10", "p"].join("\n");
+        let test_cases = [
+            TestCase {
+                id: 0,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-5"),
+                }]),
+            },
+            TestCase {
+                id: 1,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-10"),
+                }]),
+            },
+            TestCase {
+                id: 2,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("7"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-7"),
+                }]),
+            },
+            TestCase {
+                id: 3,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-10"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("10"),
+                }]),
+            },
+            TestCase {
+                id: 4,
+                input_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("-5"),
+                }]),
+                output_parameters: Box::new([Parameter {
+                    value_type: ParameterType::Int,
+                    value: String::from("5"),
+                }]),
+            },
+        ];
+        let expected = Box::new([
+            TestCaseResult {
+                id: 0,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 1,
+                test_result: TestResult::Failure(TestCaseFailureReason::WrongAnswer {
+                    input_parameters: Box::new([Parameter {
+                        value_type: ParameterType::Int,
+                        value: String::from("10"),
+                    }]),
+                    actual: String::from("10"),
+                    expected: String::from("-10"),
+                }),
+            },
+            TestCaseResult {
+                id: 2,
+                test_result: TestResult::Pass,
+            },
+            TestCaseResult {
+                id: 3,
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            },
+            TestCaseResult {
+                id: 4,
+                test_result: TestResult::Unknown,
+            },
+        ]);
+
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
+
+        assert_eq!(*actual, *expected);
+
+        Ok(())
     }
 }

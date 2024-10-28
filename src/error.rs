@@ -10,7 +10,7 @@ use thiserror::Error;
 pub const UUID_SHOULD_BE_VALID_STR: &str = "a uuid should always be valid utf8 encoding";
 
 /// An error that occurs in relation to checking a submission.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum SubmissionError {
     /// Some sort of internal error occured.
     ///
@@ -23,7 +23,7 @@ pub enum SubmissionError {
     /// There was an error during the compilation of the submitted solution.
     ///
     /// The provided `String` should contain the underlying compilation error.
-    #[error("an error occured during compilation: {0}")]
+    #[error("an error occurred during compilation: {0}")]
     Compilation(String),
 
     /// The compilation process exceeded the set timeout, and was therefore stopped prematurely.
