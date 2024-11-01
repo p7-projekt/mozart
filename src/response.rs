@@ -1,12 +1,18 @@
 //! Contains objects in relation to how responses are produced based on how the submission check went.
 
+use std::fmt::Formatter;
+
 use crate::{error::SubmissionError, model::TestCaseResult};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::{ser::SerializeStruct, Serialize};
+use serde::{
+    de::{Error, MapAccess, Visitor},
+    ser::SerializeStruct,
+    Deserialize, Deserializer, Serialize,
+};
 
 /// A submission result indicates the result of checking a given submission.
 ///
@@ -82,27 +88,23 @@ impl From<SubmissionError> for SubmissionResult {
     }
 }
 
-#[cfg(test)]
-use serde::de;
-
-#[cfg(test)]
-impl<'de> de::Deserialize<'de> for SubmissionResult {
+impl<'de> Deserialize<'de> for SubmissionResult {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: de::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         struct SubmissionResultVisitor;
 
-        impl<'de> de::Visitor<'de> for SubmissionResultVisitor {
+        impl<'de> Visitor<'de> for SubmissionResultVisitor {
             type Value = SubmissionResult;
 
-            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, f: &mut Formatter) -> std::fmt::Result {
                 f.write_str("a valid SubmissionResult")
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
-                V: de::MapAccess<'de>,
+                V: MapAccess<'de>,
             {
                 match map.next_entry::<&str, &str>()? {
                     Some(("result", "pass")) => Ok(SubmissionResult::Pass),
@@ -114,7 +116,7 @@ impl<'de> de::Deserialize<'de> for SubmissionResult {
                             let test_case_results = map.next_value()?;
                             Ok(SubmissionResult::Failure(test_case_results))
                         } else {
-                            Err(de::Error::missing_field("testCaseResults"))
+                            Err(Error::missing_field("testCaseResults"))
                         }
                     }
                     Some(("result", "error")) => {
@@ -125,10 +127,10 @@ impl<'de> de::Deserialize<'de> for SubmissionResult {
                             let message = map.next_value()?;
                             Ok(SubmissionResult::Error(message))
                         } else {
-                            Err(de::Error::missing_field("message"))
+                            Err(Error::missing_field("message"))
                         }
                     }
-                    _ => Err(de::Error::custom("mission result field or invalid value")),
+                    _ => Err(Error::custom("mission result field or invalid value")),
                 }
             }
         }
