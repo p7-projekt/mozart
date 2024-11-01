@@ -32,5 +32,5 @@ jobs:
         file: ./docker/haskell
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}-$GITHUB_JOB:${{ steps.get_tag.outputs.TAG }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}-$GITHUB_JOB:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}-${{ job.name }}:${{ steps.get_tag.outputs.TAG }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}-${{ job.name }}:latest
