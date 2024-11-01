@@ -6,7 +6,7 @@ use mozart::{
 };
 use tokio::runtime::Runtime;
 
-fn all_pass_100_test_cases(c: &mut Criterion) {
+fn pass(c: &mut Criterion) {
     let mut test_cases = Vec::with_capacity(100);
     for id in 0..100 {
         let test_case = TestCase {
@@ -35,7 +35,7 @@ fn all_pass_100_test_cases(c: &mut Criterion) {
         test_cases: test_cases.into_boxed_slice(),
     };
 
-    c.bench_function("all 100 test cases pass", |b| {
+    c.bench_function("pass baseline", |b| {
         b.to_async(Runtime::new().expect("failed to initialise tokio runtime"))
             .iter_batched(
                 || Json(submission.clone()),
@@ -45,5 +45,38 @@ fn all_pass_100_test_cases(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, all_pass_100_test_cases);
+fn fail(c: &mut Criterion) {
+    let mut test_cases = Vec::with_capacity(100);
+    for id in 0..100 {
+        let test_case = TestCase {
+            id,
+            input_parameters: Box::new([Parameter {
+                value_type: ParameterType::Int,
+                value: String::from("5"),
+            }]),
+            output_parameters: Box::new([Parameter {
+                value_type: ParameterType::Int,
+                value: String::from("5"),
+            }]),
+        };
+
+        test_cases.push(test_case);
+    }
+
+    let submission = Submission {
+        solution: String::from("solution x = x"),
+        test_cases: test_cases.into_boxed_slice(),
+    };
+
+    c.bench_function("fail baseline", |b| {
+        b.to_async(Runtime::new().expect("failed to initialise tokio runtime"))
+            .iter_batched(
+                || Json(submission.clone()),
+                |submission: Json<Submission>| submit(black_box(submission)),
+                BatchSize::SmallInput,
+            )
+    });
+}
+
+criterion_group!(benches, pass, fail);
 criterion_main!(benches);
