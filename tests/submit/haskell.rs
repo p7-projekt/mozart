@@ -91,7 +91,7 @@ async fn invalid_json() {
 async fn solution_with_all_data_types_as_input() {
     let mozart = app();
     let solution = [
-            "solution :: Int -> Float -> Bool -> Char -> String -> String",
+            "solution :: Int -> Double -> Bool -> Char -> String -> String",
             "solution int float bool char string = show int ++ show float ++ show bool ++ [char] ++ string"
         ].join("\n");
     let test_cases = Box::new([TestCase {
@@ -158,7 +158,7 @@ async fn solution_with_all_data_types_as_input() {
 async fn solution_with_all_data_types_as_output_and_no_input() {
     let mozart = app();
     let solution = [
-        "solution :: (Int, Float, Bool, Char, String)",
+        "solution :: (Int, Double, Bool, Char, String)",
         r#"solution = (7, 8.6, True, 'a', "hhh")"#,
     ]
     .join("\n");
@@ -545,7 +545,7 @@ async fn all_test_cases_pass_bool() {
 #[tokio::test]
 async fn all_test_cases_pass_float() {
     let mozart = app();
-    let solution = ["solution :: Float -> Float", "solution f = f + f"].join("\n");
+    let solution = ["solution :: Double -> Double", "solution f = f + f"].join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -886,7 +886,7 @@ async fn all_test_cases_fail_bool() {
 #[tokio::test]
 async fn all_test_cases_fail_float() {
     let mozart = app();
-    let solution = ["solution :: Float -> Float", "solution f = f"].join("\n");
+    let solution = ["solution :: Double -> Double", "solution f = f"].join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
