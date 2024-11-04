@@ -1,7 +1,7 @@
 meta {
-  name: failure, wrong answer
+  name: Character
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
@@ -12,20 +12,20 @@ post {
 
 body:json {
   {
-    "solution": "solution x =\n  if x < 0\n    then x\n    else x",
+    "solution": "solution :: Char -> Bool\nsolution c = c == 'b'",
     "testCases": [
       {
         "id": 0,
         "inputParameters": [
           {
-            "valueType": "int",
-            "value": "-5"
+            "valueType": "char",
+            "value": "a"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "int",
-            "value": "5"
+            "valueType": "bool",
+            "value": "true"
           }
         ]
       },
@@ -33,14 +33,14 @@ body:json {
         "id": 1,
         "inputParameters": [
           {
-            "valueType": "int",
-            "value": "5"
+            "valueType": "char",
+            "value": "b"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "int",
-            "value": "5"
+            "valueType": "bool",
+            "value": "false"
           }
         ]
       }

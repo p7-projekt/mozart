@@ -56,10 +56,10 @@ pub enum ParameterType {
     /// A boolean value.
     Bool,
 
-    /// A signed integer.
+    /// A signed 64-bit integer.
     Int,
 
-    /// A floating point value.
+    /// A double precision floating point value (64-bit precision).
     Float,
 
     /// A character, or a single character string (depending on the language).

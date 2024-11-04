@@ -1,5 +1,5 @@
 meta {
-  name: execution timeout
+  name: Integer
   type: http
   seq: 1
 }
@@ -12,7 +12,7 @@ post {
 
 body:json {
   {
-    "solution": "solution x = solution x",
+    "solution": "solution :: Int -> Int\nsolution x =\n  if x < 0\n    then x\n    else x",
     "testCases": [
       {
         "id": 0,
@@ -46,4 +46,5 @@ body:json {
       }
     ]
   }
+  
 }

@@ -1,0 +1,50 @@
+meta {
+  name: Floating Point
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "solution :: Double -> Double\nsolution d = d * 2",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "float",
+            "value": "5.5"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "float",
+            "value": "11.0"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "float",
+            "value": "2.3"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "float",
+            "value": "4.6"
+          }
+        ]
+      }
+    ]
+  }
+  
+}

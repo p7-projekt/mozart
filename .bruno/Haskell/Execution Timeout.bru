@@ -1,0 +1,49 @@
+meta {
+  name: Execution Timeout
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "solution x = solution x",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "-5"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ]
+      }
+    ]
+  }
+}

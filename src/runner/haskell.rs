@@ -89,14 +89,20 @@ impl LanguageHandler for Haskell {
 
     fn format_parameter(&self, parameter: &Parameter) -> String {
         match parameter.value_type {
-            ParameterType::Int | ParameterType::Float => format!("({})", parameter.value),
-            ParameterType::Char => format!("'{}'", parameter.value),
-            ParameterType::String => format!(r#""{}""#, parameter.value),
+            ParameterType::Int => format!("({} :: Int)", parameter.value),
+            ParameterType::Float => format!("({} :: Double)", parameter.value),
+            ParameterType::Char => format!("('{}' :: Char)", parameter.value),
+            ParameterType::String => format!(r#"("{}" :: String)"#, parameter.value),
             ParameterType::Bool => {
                 let mut chars = parameter.value.chars();
                 match chars.next() {
                     None => unreachable!(""),
-                    Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                    Some(c) => {
+                        format!(
+                            "({} :: Bool)",
+                            c.to_uppercase().collect::<String>() + chars.as_str()
+                        )
+                    }
                 }
             }
         }
@@ -217,7 +223,7 @@ mod format_parameter {
             value_type: ParameterType::Bool,
             value: String::from("false"),
         };
-        let expected = String::from("False");
+        let expected = String::from("(False :: Bool)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -231,7 +237,7 @@ mod format_parameter {
             value_type: ParameterType::Bool,
             value: String::from("true"),
         };
-        let expected = String::from("True");
+        let expected = String::from("(True :: Bool)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -245,7 +251,7 @@ mod format_parameter {
             value_type: ParameterType::Int,
             value: String::from("100"),
         };
-        let expected = String::from("(100)");
+        let expected = String::from("(100 :: Int)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -259,7 +265,7 @@ mod format_parameter {
             value_type: ParameterType::Int,
             value: String::from("-100"),
         };
-        let expected = String::from("(-100)");
+        let expected = String::from("(-100 :: Int)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -273,7 +279,7 @@ mod format_parameter {
             value_type: ParameterType::Float,
             value: String::from("10.0"),
         };
-        let expected = String::from("(10.0)");
+        let expected = String::from("(10.0 :: Double)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -287,7 +293,7 @@ mod format_parameter {
             value_type: ParameterType::Float,
             value: String::from("-10.0"),
         };
-        let expected = String::from("(-10.0)");
+        let expected = String::from("(-10.0 :: Double)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -301,7 +307,7 @@ mod format_parameter {
             value_type: ParameterType::Char,
             value: String::from("a"),
         };
-        let expected = String::from("'a'");
+        let expected = String::from("('a' :: Char)");
 
         let actual = haskell.format_parameter(&input);
 
@@ -315,7 +321,7 @@ mod format_parameter {
             value_type: ParameterType::String,
             value: String::from("hello"),
         };
-        let expected = String::from(r#""hello""#);
+        let expected = String::from(r#"("hello" :: String)"#);
 
         let actual = haskell.format_parameter(&input);
 

@@ -1,5 +1,5 @@
 meta {
-  name: pass, bool
+  name: String
   type: http
   seq: 5
 }
@@ -12,20 +12,20 @@ post {
 
 body:json {
   {
-    "solution": "solution b = b && True",
+    "solution": "solution :: String -> Int\nsolution s = length s",
     "testCases": [
       {
         "id": 0,
         "inputParameters": [
           {
-            "valueType": "bool",
-            "value": "false"
+            "valueType": "string",
+            "value": "hello"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "bool",
-            "value": "false"
+            "valueType": "int",
+            "value": "5"
           }
         ]
       },
@@ -33,14 +33,14 @@ body:json {
         "id": 1,
         "inputParameters": [
           {
-            "valueType": "bool",
-            "value": "true"
+            "valueType": "string",
+            "value": "mozart"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "bool",
-            "value": "true"
+            "valueType": "int",
+            "value": "6"
           }
         ]
       }
