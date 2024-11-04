@@ -1,0 +1,50 @@
+meta {
+  name: Compilation Error
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "solution x =\n  if x < 0\n    then x\n",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "-5"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "5"
+          }
+        ]
+      }
+    ]
+  }
+  
+}
