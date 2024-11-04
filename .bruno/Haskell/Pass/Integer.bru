@@ -1,7 +1,7 @@
 meta {
-  name: compilation error
+  name: Integer
   type: http
-  seq: 4
+  seq: 1
 }
 
 post {
@@ -12,7 +12,7 @@ post {
 
 body:json {
   {
-    "solution": "solution x =\n  if x < 0\n    then x\n",
+    "solution": "solution :: Int -> Int\nsolution x =\n  if x < 0\n    then x * (-1)\n    else x",
     "testCases": [
       {
         "id": 0,
