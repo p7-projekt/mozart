@@ -11,7 +11,7 @@ ci = []
 [dependencies]
 axum = "0.7.7"
 serde = { version = "1.0.214", features = ["derive"] }
-thiserror = "1.0.68"
+thiserror = "2.0.0"
 time = "0.3.36"
 tokio = { version = "1.41.0", features = ["full"] }
 tower-http = { version = "0.6.1", features = ["trace"] }
