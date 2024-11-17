@@ -33,10 +33,13 @@ pub fn app() -> Router {
         .route("/submit", post(submit))
         .route("/status", get(status))
         .layer(
-            TraceLayer::new_for_http().make_span_with(|_: &Request<Body>| {
-                let request_id = Uuid::new_v4();
-                info_span!("", %request_id)
-            }),
+            TraceLayer::new_for_http()
+                .make_span_with(|_: &Request<Body>| {
+                    let request_id = Uuid::new_v4();
+                    info_span!("", %request_id)
+                })
+                // below prevents tower-http logs for every 5** status code responses
+                .on_failure(()),
         )
 }
 
