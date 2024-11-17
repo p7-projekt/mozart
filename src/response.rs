@@ -1,7 +1,5 @@
 //! Contains objects in relation to how responses are produced based on how the submission check went.
 
-use std::fmt::Formatter;
-
 use crate::{error::SubmissionError, model::TestCaseResult};
 use axum::{
     http::StatusCode,
@@ -13,6 +11,7 @@ use serde::{
     ser::SerializeStruct,
     Deserialize, Deserializer, Serialize,
 };
+use std::fmt::Formatter;
 
 /// A submission result indicates the result of checking a given submission.
 ///
