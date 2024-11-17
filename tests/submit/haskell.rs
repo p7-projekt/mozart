@@ -91,6 +91,8 @@ async fn invalid_json() {
 async fn solution_with_all_data_types_as_input() {
     let mozart = app();
     let solution = [
+            "module Solution where",
+            "",
             "solution :: Int -> Double -> Bool -> Char -> String -> String",
             "solution int float bool char string = show int ++ show float ++ show bool ++ [char] ++ string"
         ].join("\n");
@@ -158,6 +160,8 @@ async fn solution_with_all_data_types_as_input() {
 async fn solution_with_all_data_types_as_output_and_no_input() {
     let mozart = app();
     let solution = [
+        "module Solution where",
+        "",
         "solution :: (Int, Double, Bool, Char, String)",
         r#"solution = (7, 8.6, True, 'a', "hhh")"#,
     ]
@@ -223,6 +227,8 @@ async fn solution_with_all_data_types_as_output_and_no_input() {
 async fn compilation_error() {
     let mozart = app();
     let solution = [
+        "module Solution where",
+        "",
         "solution :: Int -> Int",
         "solution x =",
         "  if x < 0",
@@ -294,6 +300,8 @@ async fn compile_timeout() {
     let mozart = app();
     let repeated = "  + x\n".repeat(100000);
     let solution = [
+        "module Solution where",
+        "",
         "solution :: Int -> Int",
         "solution x =",
         "  x",
@@ -363,7 +371,13 @@ async fn compile_timeout() {
 #[tokio::test]
 async fn execution_timeout() {
     let mozart = app();
-    let solution = ["solution :: Int -> Int", "solution x = solution x"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Int -> Int",
+        "solution x = solution x",
+    ]
+    .join("\n");
     // the contents of the test cases are entirely irrelevant
     let test_cases = Box::new([
         TestCase {
@@ -427,7 +441,13 @@ async fn execution_timeout() {
 #[tokio::test]
 async fn all_test_cases_pass_int() {
     let mozart = app();
-    let solution = ["solution :: Int -> Int", "solution x = x + x"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Int -> Int",
+        "solution x = x + x",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -486,7 +506,13 @@ async fn all_test_cases_pass_int() {
 #[tokio::test]
 async fn all_test_cases_pass_bool() {
     let mozart = app();
-    let solution = ["solution :: Bool -> Bool", "solution b = not b"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Bool -> Bool",
+        "solution b = not b",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -545,7 +571,13 @@ async fn all_test_cases_pass_bool() {
 #[tokio::test]
 async fn all_test_cases_pass_float() {
     let mozart = app();
-    let solution = ["solution :: Double -> Double", "solution f = f + f"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Double -> Double",
+        "solution f = f + f",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -604,7 +636,13 @@ async fn all_test_cases_pass_float() {
 #[tokio::test]
 async fn all_test_cases_pass_char() {
     let mozart = app();
-    let solution = ["solution :: Char -> Char", "solution c = c"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Char -> Char",
+        "solution c = c",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -663,7 +701,13 @@ async fn all_test_cases_pass_char() {
 #[tokio::test]
 async fn all_test_cases_pass_string() {
     let mozart = app();
-    let solution = ["solution :: String -> String", "solution s = s ++ s"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: String -> String",
+        "solution s = s ++ s",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -722,7 +766,13 @@ async fn all_test_cases_pass_string() {
 #[tokio::test]
 async fn all_test_cases_fail_int() {
     let mozart = app();
-    let solution = ["solution :: Int -> Int", "solution x = x"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Int -> Int",
+        "solution x = x",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -804,7 +854,13 @@ async fn all_test_cases_fail_int() {
 #[tokio::test]
 async fn all_test_cases_fail_bool() {
     let mozart = app();
-    let solution = ["solution :: Bool -> Bool", "solution b = b"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Bool -> Bool",
+        "solution b = b",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -886,7 +942,13 @@ async fn all_test_cases_fail_bool() {
 #[tokio::test]
 async fn all_test_cases_fail_float() {
     let mozart = app();
-    let solution = ["solution :: Double -> Double", "solution f = f"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Double -> Double",
+        "solution f = f",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -968,7 +1030,13 @@ async fn all_test_cases_fail_float() {
 #[tokio::test]
 async fn all_test_cases_fail_char() {
     let mozart = app();
-    let solution = ["solution :: Char -> Char", "solution c = 'a'"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Char -> Char",
+        "solution c = 'a'",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -1050,7 +1118,13 @@ async fn all_test_cases_fail_char() {
 #[tokio::test]
 async fn all_test_cases_fail_string() {
     let mozart = app();
-    let solution = ["solution :: String -> String", "solution s = s"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: String -> String",
+        "solution s = s",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -1132,7 +1206,13 @@ async fn all_test_cases_fail_string() {
 #[tokio::test]
 async fn runtime_error_in_non_last_test_case() {
     let mozart = app();
-    let solution = ["solution :: Int -> Int", "solution i = 10 `div` i"].join("\n");
+    let solution = [
+        "module Solution where",
+        "",
+        "solution :: Int -> Int",
+        "solution i = 10 `div` i",
+    ]
+    .join("\n");
     let test_cases = Box::new([
         TestCase {
             id: 0,
@@ -1216,6 +1296,8 @@ async fn runtime_error_in_non_last_test_case() {
 async fn mixed_pass_and_fail_with_runtime_error() {
     let mozart = app();
     let solution = [
+        "module Solution where",
+        "",
         "solution :: Int -> Int",
         "solution x",
         "  | x >= 0 = x",
