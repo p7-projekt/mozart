@@ -26,6 +26,8 @@ fn pass(c: &mut Criterion) {
 
     let submission = Submission {
         solution: [
+            "module Solution where",
+            "",
             "solution x =",
             "  if x < 0",
             "    then x * (-1)",
@@ -64,7 +66,7 @@ fn fail(c: &mut Criterion) {
     }
 
     let submission = Submission {
-        solution: String::from("solution x = x"),
+        solution: ["module Solution where", "", "solution x = x"].join("\n"),
         test_cases: test_cases.into_boxed_slice(),
     };
 

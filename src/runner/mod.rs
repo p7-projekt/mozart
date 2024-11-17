@@ -22,9 +22,6 @@ const TEST_CASES_TARGET: &str = "TEST_CASES";
 /// The replacement target for inserting the output file path.
 const OUTPUT_FILE_PATH_TARGET: &str = "OUTPUT_FILE_PATH";
 
-/// The replacement target for inserting the submitted solution.
-const SOLUTION_TARGET: &str = "SOLUTION";
-
 pub trait LanguageHandler {
     /// Creates a new `LanguageHandler`.
     fn new(temp_dir: PathBuf) -> Self;
@@ -38,11 +35,21 @@ pub trait LanguageHandler {
     /// Gets the basic test runner before generated test cases, the solution, and the output file path are inserted.
     ///
     /// The test cases are inserted in place of the value in [`TEST_CASES_TARGET`].
+    fn base_test_code(&self) -> &str;
+
+    /// Gets the path to the solution file, the path should contain the file extension.
+    fn solution_file_path(&self) -> PathBuf;
+
+    /// Gets the path to the test runner file, the path should contain the file extension.
+    fn test_runner_file_path(&self) -> PathBuf;
+
+    /// Gets the test runner for the given language.
+    ///
+    /// The test runner is the code that provides a custom assert function, such that solution
+    /// answers can be checked up against the expected output for a given test case.
     ///
     /// The output file path is inserted in place of the value in [`OUTPUT_FILE_PATH_TARGET`].
-    ///
-    /// The solution is inserted in place of the value in [`SOLUTION_TARGET`].
-    fn base_test_code(&self) -> &str;
+    fn test_runner_code(&self) -> &str;
 
     /// Generates the language specific test cases.
     fn generate_test_cases(&self, test_cases: &[TestCase]) -> String;
@@ -79,15 +86,8 @@ impl TestRunner {
     /// An `Ok` result indicates that all test cases were passed.
     /// An `Err` result can indicate a number of things specified in the variants of `[SubmissionError]`.
     pub async fn check(self, submission: Submission) -> Result<(), SubmissionError> {
-        info!("creating test file");
-        let mut test_file = match File::create(self.handler.test_file_path()) {
-            Ok(tf) => tf,
-            Err(err) => {
-                error!("could not create test file: {}", err);
-                return Err(SubmissionError::Internal);
-            }
-        };
-
+        // we need to create solution file before writing test runner code, so we might as well
+        // create it at the start of the function
         info!("creating output file");
         let mut output_file_path = self.handler.dir().clone();
         output_file_path.push("output");
@@ -98,25 +98,65 @@ impl TestRunner {
                 return Err(SubmissionError::Internal);
             }
         };
-
         let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+
+        info!("creating solution file");
+        let mut solution_file = match File::create(self.handler.solution_file_path()) {
+            Ok(tf) => tf,
+            Err(err) => {
+                error!("could not create solution file: {}", err);
+                return Err(SubmissionError::Internal);
+            }
+        };
+
+        info!("writing solution to file");
+        debug!(?submission.solution);
+        if let Err(err) = solution_file.write_all(submission.solution.as_bytes()) {
+            error!("could not write solution to file: {}", err);
+            return Err(SubmissionError::Internal);
+        }
+
+        info!("creating test runner file");
+        let mut test_runner_file = match File::create(self.handler.test_runner_file_path()) {
+            Ok(tf) => tf,
+            Err(err) => {
+                error!("could not create test runner file: {}", err);
+                return Err(SubmissionError::Internal);
+            }
+        };
+
+        let test_runner_code = self
+            .handler
+            .test_runner_code()
+            .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
+
+        info!("writing test runner to file");
+        if let Err(err) = test_runner_file.write_all(test_runner_code.as_bytes()) {
+            error!("could not write test runner to file: {}", err);
+            return Err(SubmissionError::Internal);
+        }
 
         info!("generating language specific test cases");
         let generated_test_cases = self.handler.generate_test_cases(&submission.test_cases);
         debug!(?generated_test_cases);
 
-        info!("combining final test code");
-        let final_test_code = self
+        let test_code = self
             .handler
             .base_test_code()
-            .replace(SOLUTION_TARGET, &submission.solution)
-            .replace(TEST_CASES_TARGET, generated_test_cases.as_str())
-            .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
-        debug!(?final_test_code);
+            .replace(TEST_CASES_TARGET, &generated_test_cases);
 
-        info!("writing test code to test file");
-        if let Err(err) = test_file.write_all(final_test_code.as_bytes()) {
-            error!("could not write test code to test file: {}", err);
+        info!("creating test file");
+        let mut test_file = match File::create(self.handler.test_file_path().as_path()) {
+            Ok(tf) => tf,
+            Err(err) => {
+                error!("could not create test file: {}", err);
+                return Err(SubmissionError::Internal);
+            }
+        };
+
+        info!("writing to test file");
+        if let Err(err) = test_file.write_all(test_code.as_bytes()) {
+            error!("failed to write test case: {}", err);
             return Err(SubmissionError::Internal);
         }
 
@@ -126,7 +166,6 @@ impl TestRunner {
         let mut test_output = String::new();
         if let Err(err) = output_file.read_to_string(&mut test_output) {
             error!("could not read test output from output file: {}", err);
-            return Err(SubmissionError::Internal);
         }
         debug!(?test_output);
 
