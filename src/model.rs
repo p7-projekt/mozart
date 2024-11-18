@@ -88,11 +88,6 @@ pub enum TestResult {
     /// The test case passed.
     Pass,
 
-    /// The result of the test case is unknown.
-    ///
-    /// This is likely caused by a previous test case causing a runtime error, thereby crashing the test runner.
-    Unknown,
-
     /// The test case did not pass.
     Failure(TestCaseFailureReason),
 }

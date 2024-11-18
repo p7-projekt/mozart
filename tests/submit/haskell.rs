@@ -1271,7 +1271,7 @@ async fn runtime_error_in_non_last_test_case() {
         },
         TestCaseResult {
             id: 2,
-            test_result: TestResult::Unknown,
+            test_result: TestResult::Pass,
         },
     ]));
 
@@ -1421,7 +1421,7 @@ async fn mixed_pass_and_fail_with_runtime_error() {
         },
         TestCaseResult {
             id: 5,
-            test_result: TestResult::Unknown,
+            test_result: TestResult::Pass,
         },
     ]));
 
