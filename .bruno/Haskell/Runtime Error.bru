@@ -1,0 +1,50 @@
+meta {
+  name: Runtime Error
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "module Solution where\n\nsolution :: String -> Char\nsolution s = head s",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "string",
+            "value": "agurk"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "char",
+            "value": "a"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "string",
+            "value": ""
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "char",
+            "value": "c"
+          }
+        ]
+      }
+    ]
+  }
+  
+}
