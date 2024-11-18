@@ -5,6 +5,7 @@ use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
     timeout::timeout_process,
+    RESTRICTED_USER_ID,
 };
 use std::{path::PathBuf, process::Stdio, time::Duration};
 use tokio::process::Command;
@@ -235,6 +236,7 @@ impl LanguageHandler for Haskell {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .uid(*RESTRICTED_USER_ID)
             .spawn();
         let execution_handle = match execution_process {
             Ok(eh) => eh,
