@@ -18,15 +18,20 @@ const TIMEOUT: Duration = Duration::from_secs(5);
 /// The timeout duration used during pipeline workflows.
 const TIMEOUT: Duration = Duration::from_secs(30);
 
-/// The base test 'runner' code for Haskell.
-///
-/// The markers `SOLUTION`, `TEST_CASES`, and `OUTPUT_FILE_PATH` are being substituted
-/// at runtime with the request specific values.
+/// The base test code for a single test case in haskell.
 const HASKELL_BASE_TEST_CODE: &str = r###"
-SOLUTION
+module Main where
+
+import Solution
+import TestRunner
 
 main = do
 TEST_CASES
+"###;
+
+/// The test runner for the haskell implementation.
+const HASKELL_TEST_RUNNER: &str = r###"
+module TestRunner where
 
 testChecker actual expected = do
   if actual == expected
@@ -40,89 +45,12 @@ pub struct Haskell {
     temp_dir: PathBuf,
 }
 
-impl LanguageHandler for Haskell {
-    fn new(temp_dir: PathBuf) -> Self {
-        Self { temp_dir }
-    }
-
-    fn dir(&self) -> &PathBuf {
-        &self.temp_dir
-    }
-
-    fn test_file_path(&self) -> PathBuf {
-        let mut path = self.temp_dir.clone();
-        path.push("Test.hs");
-
-        path
-    }
-
-    fn base_test_code(&self) -> &str {
-        HASKELL_BASE_TEST_CODE
-    }
-
-    fn generate_test_cases(&self, test_cases: &[TestCase]) -> String {
-        let mut generated_test_cases = Vec::with_capacity(test_cases.len());
-
-        for test_case in test_cases {
-            let formatted_input_parameters = test_case
-                .input_parameters
-                .iter()
-                .map(|ip| self.format_parameter(ip))
-                .collect::<Vec<String>>()
-                .join(" ");
-
-            let formatted_output_parameters = test_case
-                .output_parameters
-                .iter()
-                .map(|op| self.format_parameter(op))
-                .collect::<Vec<String>>()
-                .join(",");
-
-            let generated_test_case = format!(
-                "  testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})"
-            );
-            generated_test_cases.push(generated_test_case);
-        }
-
-        generated_test_cases.join("\n")
-    }
-
-    fn format_parameter(&self, parameter: &Parameter) -> String {
-        match parameter.value_type {
-            ParameterType::Int => format!("({} :: Int)", parameter.value),
-            ParameterType::Float => format!("({} :: Double)", parameter.value),
-            ParameterType::Char => format!("('{}' :: Char)", parameter.value),
-            ParameterType::String => format!(r#"("{}" :: String)"#, parameter.value),
-            ParameterType::Bool => {
-                let mut chars = parameter.value.chars();
-                match chars.next() {
-                    None => unreachable!(""),
-                    Some(c) => {
-                        format!(
-                            "({} :: Bool)",
-                            c.to_uppercase().collect::<String>() + chars.as_str()
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    async fn run(&self) -> Result<(), SubmissionError> {
-        let mut executable_path = self.temp_dir.clone();
-        executable_path.push("test");
-        let executable_str = executable_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-        let test_file_path = self.test_file_path();
-        let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-
+impl Haskell {
+    async fn compile(&self, args: &[&str]) -> Result<(), SubmissionError> {
         info!("spawning compilation process");
         let compile_process = Command::new("ghc")
-            .args([
-                "-O2",          // highest safe level of optimization (ensures same semantics)
-                "-o",           // specifies the output path of the binary
-                executable_str, // the output path of the binary
-                test_file_str,  // the compilation target
-            ])
+            .args(args)
+            .arg("-O2") // best optimization level for fast vs. safe trade-off
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -179,6 +107,131 @@ impl LanguageHandler for Haskell {
                 return Err(SubmissionError::Internal);
             }
         }
+        Ok(())
+    }
+}
+
+impl LanguageHandler for Haskell {
+    fn new(temp_dir: PathBuf) -> Self {
+        Self { temp_dir }
+    }
+
+    fn dir(&self) -> &PathBuf {
+        &self.temp_dir
+    }
+
+    fn test_file_path(&self) -> PathBuf {
+        let mut path = self.temp_dir.clone();
+        path.push("Main.hs");
+
+        path
+    }
+
+    fn base_test_code(&self) -> &str {
+        HASKELL_BASE_TEST_CODE
+    }
+
+    fn solution_file_path(&self) -> PathBuf {
+        let mut path = self.temp_dir.clone();
+        path.push("Solution.hs");
+
+        path
+    }
+
+    fn test_runner_file_path(&self) -> PathBuf {
+        let mut path = self.temp_dir.clone();
+        path.push("TestRunner.hs");
+
+        path
+    }
+
+    fn test_runner_code(&self) -> &str {
+        HASKELL_TEST_RUNNER
+    }
+
+    fn generate_test_cases(&self, test_cases: &[TestCase]) -> String {
+        let mut generated_test_cases = Vec::with_capacity(test_cases.len());
+
+        for test_case in test_cases {
+            let formatted_input_parameters = test_case
+                .input_parameters
+                .iter()
+                .map(|ip| self.format_parameter(ip))
+                .collect::<Vec<String>>()
+                .join(" ");
+
+            let formatted_output_parameters = test_case
+                .output_parameters
+                .iter()
+                .map(|op| self.format_parameter(op))
+                .collect::<Vec<String>>()
+                .join(",");
+
+            let generated_test_case = format!(
+                "  testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})"
+            );
+            generated_test_cases.push(generated_test_case);
+        }
+
+        generated_test_cases.join("\n")
+    }
+
+    fn format_parameter(&self, parameter: &Parameter) -> String {
+        match parameter.value_type {
+            ParameterType::Int => format!("({} :: Int)", parameter.value),
+            ParameterType::Float => format!("({} :: Double)", parameter.value),
+            ParameterType::Char => format!("('{}' :: Char)", parameter.value),
+            ParameterType::String => format!(r#"("{}" :: String)"#, parameter.value),
+            ParameterType::Bool => {
+                let mut chars = parameter.value.chars();
+                match chars.next() {
+                    None => unreachable!(""),
+                    Some(c) => {
+                        format!(
+                            "({} :: Bool)",
+                            c.to_uppercase().collect::<String>() + chars.as_str()
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    async fn run(&self) -> Result<(), SubmissionError> {
+        info!("compiling solution");
+        let solution_file_path = self.solution_file_path();
+        let solution_file_str = solution_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+        self.compile(&[solution_file_str]).await?;
+
+        info!("compiling test runner");
+        let test_runner_file_path = self.test_runner_file_path();
+        let test_runner_file_str = test_runner_file_path
+            .to_str()
+            .expect(UUID_SHOULD_BE_VALID_STR);
+        if self.compile(&[test_runner_file_str]).await.is_err() {
+            return Err(SubmissionError::Internal);
+        }
+
+        info!("compiling test code");
+        let mut executable_path = self.temp_dir.clone();
+        executable_path.push("test");
+        let executable_str = executable_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+        let test_file_path = self.test_file_path();
+        let test_file_str = test_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+        let base_path = self
+            .temp_dir
+            .as_path()
+            .to_str()
+            .expect(UUID_SHOULD_BE_VALID_STR);
+
+        let import_path = &format!("-i{base_path}");
+        self.compile(&[
+            "-o",           // flag to set the output path
+            executable_str, // the path to output executable
+            test_file_str,  // the absolute path of Main.hs
+            import_path,    // where to look for Solution and TestRunner modules
+        ])
+        .await?;
 
         info!("spawning execution process");
         let execution_process = Command::new(executable_path)

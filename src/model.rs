@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A submission provided by the backend.
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Submission {
     /// The user submitted solution.
@@ -16,7 +16,7 @@ pub struct Submission {
 }
 
 /// A test case for a given exercise.
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TestCase {
     /// The test case id, this is not relevant for mozart, but knowing which test cases failed,
