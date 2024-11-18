@@ -27,7 +27,7 @@ mod runner;
 mod timeout;
 
 /// The parent directory of all test runner jobs.
-const PARENT_DIR: &str = "/tmp";
+const PARENT_DIR: &str = "/mozart";
 
 /// The user id of the `restricted` user which is applied to solution execution to restrict its
 /// permissions.
