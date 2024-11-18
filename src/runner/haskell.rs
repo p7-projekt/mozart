@@ -234,7 +234,7 @@ impl LanguageHandler for Haskell {
         .await?;
 
         info!("spawning execution process");
-        let execution_process = Command::new(executable_path.clone())
+        let execution_process = Command::new(executable_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
