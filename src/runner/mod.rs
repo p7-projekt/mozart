@@ -159,6 +159,11 @@ impl TestRunner {
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
         info!("parsing test output");
 
+        if test_output.trim().is_empty() {
+            error!("test output is empty");
+            return Err(SubmissionError::Internal);
+        }
+
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
             let test_case = &test_cases[index];
@@ -230,6 +235,18 @@ mod parse_output_file {
             input_parameters: Box::new([]),
             output_parameters: Box::new([]),
         }
+    }
+
+    #[test]
+    fn empty_test_output() {
+        let test_output = "";
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0), empty_test_case(1), empty_test_case(2)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(test_output, &test_cases);
+
+        assert_eq!(actual, expected);
     }
 
     #[test]
