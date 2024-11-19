@@ -101,10 +101,8 @@ impl TestRunner {
             }
         };
 
-        let test_runner_code = self.handler.test_runner_code();
-
         info!("writing test runner to file");
-        if let Err(err) = test_runner_file.write_all(test_runner_code.as_bytes()) {
+        if let Err(err) = test_runner_file.write_all(self.handler.test_runner_code().as_bytes()) {
             error!("could not write test runner to file: {}", err);
             return Err(SubmissionError::Internal);
         }
