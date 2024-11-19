@@ -32,8 +32,12 @@ const PARENT_DIR: &str = "/mozart";
 /// The user id of the `restricted` user which is applied to solution execution to restrict its
 /// permissions.
 pub static RESTRICTED_USER_ID: LazyLock<u32> = LazyLock::new(|| {
+    /// The name of the linux user that will be restricted from creating files, and therefore used to
+    /// call the solution execution process.
+    const RESTRICTED_USER_NAME: &str = "restricted";
+
     let id_process = Command::new("id")
-        .args(["-u", "restricted"])
+        .args(["-u", RESTRICTED_USER_NAME])
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
@@ -48,14 +52,8 @@ pub static RESTRICTED_USER_ID: LazyLock<u32> = LazyLock::new(|| {
         Ok(id) => id,
         Err(err) => {
             error!("failed to parse restricted user id: {}", err);
-            info!(
-                "stdout of 'id -u restricted': {}",
-                String::from_utf8_lossy(&output.stdout)
-            );
-            info!(
-                "stderr of 'id -u restricted': {}",
-                String::from_utf8_lossy(&output.stderr)
-            );
+            info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
             panic!(
                 "could not find user id of restricted user to apply sandbox of solution execution"
