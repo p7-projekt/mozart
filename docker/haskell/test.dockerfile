@@ -10,4 +10,4 @@ RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /test
 COPY . .
 ENV PATH="$PATH:/usr/bin/ghc"
-CMD ["cargo", "test", "--target=x86_64-unknown-linux-musl", "--features", "haskell"]
+CMD ["cargo", "test", "--target=x86_64-unknown-linux-musl", "--features", "haskell", "--features", "ci"]
