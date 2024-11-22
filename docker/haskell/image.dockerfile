@@ -10,7 +10,10 @@ RUN apk add --no-cache \
     ghc=9.8.2-r1 \
     musl-dev \
     gcc \
-    libc-dev
+    libc-dev \
+    shadow
+RUN useradd -M -N restricted # -M means no home folder, -N means no user group
+
 ENV PATH="$PATH:/usr/bin/ghc"
 EXPOSE 8080
 CMD ["/bin/mozart"]
