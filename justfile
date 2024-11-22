@@ -1,27 +1,22 @@
 PLATFORM := "--target=x86_64-unknown-linux-musl"
 
+# Lists justfile recipes.
 default:
     just -l
 
-# Build and execute crate
-dev LANGUAGE:
-    MOZART_LOG=TRACE cargo run --locked --release {{PLATFORM}} --features {{LANGUAGE}}
-
-# Build and execute crate
+# Builds and runs the mozart container.
 run LANGUAGE:
-    cargo run --locked --release {{PLATFORM}} --features {{LANGUAGE}}
+    @just build {{LANGUAGE}}
+    docker run -p 8080:8080 -d mozart-{{LANGUAGE}}
 
-# Run test cases
+# Run language specific test cases in Docker image.
 test LANGUAGE:
-    cargo test {{PLATFORM}} --features {{LANGUAGE}}
+    docker build . -t mozart-{{LANGUAGE}}-test -f docker/{{LANGUAGE}}/test.dockerfile
+    docker run mozart-{{LANGUAGE}}-test
 
-# Build the mozart image
-dbuild LANGUAGE:
-    docker build . -t {{LANGUAGE}} -f docker/{{LANGUAGE}}
-
-# Runs the mozart container
-drun LANGUAGE:
-    docker run -p 8080:8080 -d {{LANGUAGE}}
+# Build a language specific mozart image.
+build LANGUAGE:
+    docker build . -t mozart-{{LANGUAGE}} -f docker/{{LANGUAGE}}/image.dockerfile
 
 # Compile and open documentation.
 doc LANGUAGE="default":
