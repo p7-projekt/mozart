@@ -12,6 +12,7 @@ RUN apk add --no-cache \
     gcc \
     libc-dev \
     shadow
+RUN mkdir /mozart
 RUN useradd -M -N restricted # -M means no home folder, -N means no user group
 
 ENV PATH="$PATH:/usr/bin/ghc"
