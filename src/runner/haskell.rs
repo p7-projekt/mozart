@@ -176,7 +176,7 @@ impl LanguageHandler for Haskell {
             ParameterType::Bool => {
                 let mut chars = parameter.value.chars();
                 match chars.next() {
-                    None => unreachable!(""),
+                    None => unreachable!("there should always be at lesat a character"),
                     Some(c) => {
                         format!(
                             "({} :: Bool)",
