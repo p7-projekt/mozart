@@ -12,6 +12,10 @@ use haskell::Haskell;
 #[cfg(feature = "haskell")]
 mod haskell;
 
+#[cfg(feature = "python")]
+use python::Python;
+#[cfg(feature = "python")]
+mod python;
 
 #[cfg(not(feature = "ci"))]
 /// The timeout duration for the compilation and execution process.
@@ -68,6 +72,8 @@ pub trait LanguageHandler {
 pub struct TestRunner {
     #[cfg(feature = "haskell")]
     handler: Haskell,
+    #[cfg(feature = "python")]
+    handler: Python,
 }
 
 impl TestRunner {
@@ -76,6 +82,8 @@ impl TestRunner {
         Self {
             #[cfg(feature = "haskell")]
             handler: Haskell::new(temp_dir),
+            #[cfg(feature = "python")]
+            handler: Python::new(temp_dir),
         }
     }
 
