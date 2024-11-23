@@ -4,13 +4,22 @@ use crate::{
     error::SubmissionError,
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
 };
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{fs::File, io::Write, path::PathBuf, time::Duration};
 use tracing::{debug, error, info};
 
 #[cfg(feature = "haskell")]
 use haskell::Haskell;
 #[cfg(feature = "haskell")]
 mod haskell;
+
+
+#[cfg(not(feature = "ci"))]
+/// The timeout duration for the compilation and execution process.
+const TIMEOUT: Duration = Duration::from_secs(5);
+
+#[cfg(feature = "ci")]
+/// The timeout duration used during pipeline workflows.
+const TIMEOUT: Duration = Duration::from_secs(30);
 
 /// The replacement target for inserting test cases.
 const TEST_CASES_TARGET: &str = "TEST_CASES";

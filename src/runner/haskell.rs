@@ -4,20 +4,13 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
+    runner::TIMEOUT,
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
-use std::{path::PathBuf, process::Stdio, time::Duration};
+use std::{path::PathBuf, process::Stdio};
 use tokio::process::Command;
 use tracing::{debug, error, info};
-
-#[cfg(not(feature = "ci"))]
-/// The timeout duration for the compilation and execution process.
-const TIMEOUT: Duration = Duration::from_secs(5);
-
-#[cfg(feature = "ci")]
-/// The timeout duration used during pipeline workflows.
-const TIMEOUT: Duration = Duration::from_secs(30);
 
 /// The base test code for a single test case in haskell.
 const HASKELL_BASE_TEST_CODE: &str = r###"
