@@ -12,7 +12,7 @@ use std::{path::PathBuf, process::Stdio};
 use tokio::process::Command;
 use tracing::{debug, error, info};
 
-/// The base test code for a single test case in haskell.
+/// The base test code for Haskell.
 const HASKELL_BASE_TEST_CODE: &str = r###"
 module Main where
 
@@ -24,7 +24,7 @@ main = do
 TEST_CASES
 "###;
 
-/// The test runner for the haskell implementation.
+/// The test runner for the Haskell implementation.
 const HASKELL_TEST_RUNNER: &str = r###"
 module TestRunner where
 

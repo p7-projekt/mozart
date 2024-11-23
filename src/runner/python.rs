@@ -12,6 +12,7 @@ use std::{path::PathBuf, process::Stdio};
 use tokio::process::Command;
 use tracing::{error, info};
 
+/// The base test code for Haskell.
 const PYTHON_BASE_TEST_CODE: &str = r###"
 from solution import solution
 from test_runner import test_checker
@@ -23,6 +24,7 @@ if __name__ == "__main__":
     exit(main())
 "###;
 
+/// The test runner for the Python implementation.
 const PYTHON_TEST_RUNNER: &str = r###"
 def test_checker(actual, expected):
     if actual == expected:
@@ -31,6 +33,10 @@ def test_checker(actual, expected):
         print("f" + "," + repr(actual) + "," + repr(expected))
 "###;
 
+/// The exception handling code snippet for Python.
+///
+/// The `TEST_CASE` is being replace with a call to the actual test case.
+/// This is done for all test cases.
 const PYTHON_EXCEPTION_SNIPPET: &str = r###"
     try:
         TEST_CASE
