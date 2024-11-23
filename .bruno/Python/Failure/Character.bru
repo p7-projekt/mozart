@@ -1,0 +1,50 @@
+meta {
+  name: Character
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "def solution(s: str):\n    return s == \"c\"",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "char",
+            "value": "a"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "bool",
+            "value": "true"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "char",
+            "value": "b"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "bool",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  }
+  
+}

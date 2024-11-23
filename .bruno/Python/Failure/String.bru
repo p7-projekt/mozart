@@ -1,0 +1,50 @@
+meta {
+  name: String
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "def solution(s: str):\n    return s + s",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "string",
+            "value": "hello"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "string",
+            "value": "hello"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "string",
+            "value": "mozart"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "string",
+            "value": "mozart"
+          }
+        ]
+      }
+    ]
+  }
+  
+}
