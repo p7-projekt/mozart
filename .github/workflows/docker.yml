@@ -1,0 +1,26 @@
+name: Docker
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  haskell-docker:
+    name: Haskell Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t mozart-haskell . -f docker/haskell/image.dockerfile
+
+  python-docker:
+    name: Python Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t mozart-python . -f docker/python/image.dockerfile

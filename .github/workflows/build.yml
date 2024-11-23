@@ -1,0 +1,46 @@
+name: Build
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  haskell-build:
+    name: Haskell Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Use cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "workflow"
+
+      - name: Release Build
+        run: cargo build --release --target=x86_64-unknown-linux-musl --features haskell
+
+  python-build:
+    name: Python Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Use cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "workflow"
+
+      - name: Release Build
+        run: cargo build --release --target=x86_64-unknown-linux-musl --features python
