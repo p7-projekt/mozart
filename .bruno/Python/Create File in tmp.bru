@@ -1,0 +1,50 @@
+meta {
+  name: Create File in tmp
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/submit
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "solution": "def solution(x: str):\n    with open('/tmp/my_file.txt', 'w') as file:\n        file.write('Hello')\n    return x * 2",
+    "testCases": [
+      {
+        "id": 0,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "2"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "4"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "inputParameters": [
+          {
+            "valueType": "int",
+            "value": "1"
+          }
+        ],
+        "outputParameters": [
+          {
+            "valueType": "int",
+            "value": "2"
+          }
+        ]
+      }
+    ]
+  }
+  
+}
