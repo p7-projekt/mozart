@@ -1,0 +1,32 @@
+name: Format
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  haskell-test:
+    name: Haskell Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build Docker Test Image
+        run: docker build -t mozart-haskell-test -f docker/haskell/test.dockerfile .
+
+      - name: Run Docker Test Image
+        run: docker run mozart-haskell-test
+
+  python-test:
+    name: Python Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build Docker Test Image
+        run: docker build -t mozart-python-test -f docker/python/test.dockerfile .
+
+      - name: Run Docker Test Image
+        run: docker run mozart-python-test

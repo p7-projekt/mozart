@@ -1,7 +1,7 @@
 meta {
-  name: String
+  name: Runtime Error
   type: http
-  seq: 5
+  seq: 3
 }
 
 post {
@@ -12,20 +12,20 @@ post {
 
 body:json {
   {
-    "solution": "module Solution where\n\nsolution :: String -> String\nsolution s = s ++ s",
+    "solution": "def solution(x: str):\n    return x.len()",
     "testCases": [
       {
         "id": 0,
         "inputParameters": [
           {
             "valueType": "string",
-            "value": "hello"
+            "value": ""
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "int",
+            "value": "0"
           }
         ]
       },
@@ -34,13 +34,13 @@ body:json {
         "inputParameters": [
           {
             "valueType": "string",
-            "value": "mozart"
+            "value": "agurk"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "int",
+            "value": "5"
           }
         ]
       }

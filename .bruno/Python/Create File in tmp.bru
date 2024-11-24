@@ -1,7 +1,7 @@
 meta {
-  name: String
+  name: Create File in tmp
   type: http
-  seq: 5
+  seq: 3
 }
 
 post {
@@ -12,20 +12,20 @@ post {
 
 body:json {
   {
-    "solution": "module Solution where\n\nsolution :: String -> String\nsolution s = s ++ s",
+    "solution": "def solution(x: str):\n    with open('/tmp/my_file.txt', 'w') as file:\n        file.write('Hello')\n    return x * 2",
     "testCases": [
       {
         "id": 0,
         "inputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "int",
+            "value": "2"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "int",
+            "value": "4"
           }
         ]
       },
@@ -33,14 +33,14 @@ body:json {
         "id": 1,
         "inputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "int",
+            "value": "1"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "int",
+            "value": "2"
           }
         ]
       }

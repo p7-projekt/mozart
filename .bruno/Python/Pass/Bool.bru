@@ -1,7 +1,7 @@
 meta {
-  name: String
+  name: Bool
   type: http
-  seq: 5
+  seq: 2
 }
 
 post {
@@ -12,20 +12,20 @@ post {
 
 body:json {
   {
-    "solution": "module Solution where\n\nsolution :: String -> String\nsolution s = s ++ s",
+    "solution": "def solution(x: bool):\n    return x",
     "testCases": [
       {
         "id": 0,
         "inputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "bool",
+            "value": "false"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "bool",
+            "value": "false"
           }
         ]
       },
@@ -33,14 +33,14 @@ body:json {
         "id": 1,
         "inputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "bool",
+            "value": "true"
           }
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "bool",
+            "value": "true"
           }
         ]
       }

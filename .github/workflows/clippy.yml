@@ -1,0 +1,46 @@
+name: Clippy
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  haskell-clippy:
+    name: Haskell Clippy Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Use cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "workflow"
+
+      - name: Run clippy linter
+        run: cargo clippy --features haskell --tests -- -W clippy::all
+
+  python-clippy:
+    name: Python Clippy Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Use cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "workflow"
+
+      - name: Run clippy linter
+        run: cargo clippy --features python --tests -- -W clippy::all

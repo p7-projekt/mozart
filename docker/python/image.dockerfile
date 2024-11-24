@@ -1,13 +1,18 @@
-FROM --platform=linux/amd64 rust:alpine3.20
+FROM --platform=linux/amd64 rust:1.82 AS build
+RUN rustup target add x86_64-unknown-linux-musl
+WORKDIR /build
+COPY . /build
+RUN cargo build --locked --release --target=x86_64-unknown-linux-musl --features python
 
+FROM --platform=linux/amd64 alpine:3.20
+COPY --from=build /build/target/x86_64-unknown-linux-musl/release/mozart /bin/mozart
 RUN apk add --no-cache \
-    ghc=9.8.2-r1 \
+    python3=3.12.7-r0 \
     musl-dev \
     acl \
     shadow
 RUN mkdir /mozart
 RUN useradd -M -N restricted # -M means no home folder, -N means no user group
-RUN rustup target add x86_64-unknown-linux-musl
 
 RUN setfacl -m u:restricted:r-x /mozart 
 RUN setfacl -m u:restricted:r-x /usr
@@ -21,7 +26,6 @@ RUN setfacl -m u:restricted:--- /var/mail
 RUN setfacl -m u:restricted:--- /var/cache
 RUN setfacl -m u:restricted:--- /var/log
 
-WORKDIR /test
-COPY . .
-ENV PATH="$PATH:/usr/bin/ghc"
-CMD ["cargo", "test", "--target=x86_64-unknown-linux-musl", "--features", "haskell", "--features", "ci"]
+ENV PATH="$PATH:/usr/bin/python"
+EXPOSE 8080
+CMD ["/bin/mozart"]

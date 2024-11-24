@@ -12,7 +12,7 @@ post {
 
 body:json {
   {
-    "solution": "module Solution where\n\nsolution :: String -> String\nsolution s = s ++ s",
+    "solution": "def solution(x: str):\n    return len(x)",
     "testCases": [
       {
         "id": 0,
@@ -24,8 +24,8 @@ body:json {
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "hello"
+            "valueType": "int",
+            "value": "5"
           }
         ]
       },
@@ -39,8 +39,8 @@ body:json {
         ],
         "outputParameters": [
           {
-            "valueType": "string",
-            "value": "mozart"
+            "valueType": "int",
+            "value": "6"
           }
         ]
       }

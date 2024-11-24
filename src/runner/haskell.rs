@@ -4,22 +4,15 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
+    runner::TIMEOUT,
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
-use std::{path::PathBuf, process::Stdio, time::Duration};
+use std::{path::PathBuf, process::Stdio};
 use tokio::process::Command;
 use tracing::{debug, error, info};
 
-#[cfg(not(feature = "ci"))]
-/// The timeout duration for the compilation and execution process.
-const TIMEOUT: Duration = Duration::from_secs(5);
-
-#[cfg(feature = "ci")]
-/// The timeout duration used during pipeline workflows.
-const TIMEOUT: Duration = Duration::from_secs(30);
-
-/// The base test code for a single test case in haskell.
+/// The base test code for Haskell.
 const HASKELL_BASE_TEST_CODE: &str = r###"
 module Main where
 
@@ -31,7 +24,7 @@ main = do
 TEST_CASES
 "###;
 
-/// The test runner for the haskell implementation.
+/// The test runner for the Haskell implementation.
 const HASKELL_TEST_RUNNER: &str = r###"
 module TestRunner where
 
@@ -183,7 +176,7 @@ impl LanguageHandler for Haskell {
             ParameterType::Bool => {
                 let mut chars = parameter.value.chars();
                 match chars.next() {
-                    None => unreachable!(""),
+                    None => unreachable!("there should always be at lesat a character"),
                     Some(c) => {
                         format!(
                             "({} :: Bool)",
