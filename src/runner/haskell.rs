@@ -5,6 +5,7 @@ use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
     timeout::timeout_process,
+    RESTRICTED_USER_ID,
 };
 use std::{path::PathBuf, process::Stdio, time::Duration};
 use tokio::process::Command;
@@ -24,6 +25,7 @@ module Main where
 
 import Solution
 import TestRunner
+import Control.Exception
 
 main = do
 TEST_CASES
@@ -35,8 +37,8 @@ module TestRunner where
 
 testChecker actual expected = do
   if actual == expected
-    then appendFile "OUTPUT_FILE_PATH" ("p" ++ "\n")
-    else appendFile "OUTPUT_FILE_PATH" ("f" ++ "," ++ show actual ++ "," ++ show expected ++ "\n")
+    then putStrLn "p"
+    else putStrLn ("f" ++ "," ++ show actual ++ "," ++ show expected)
 "###;
 
 /// The language handler for Haskell.
@@ -116,10 +118,6 @@ impl LanguageHandler for Haskell {
         Self { temp_dir }
     }
 
-    fn dir(&self) -> &PathBuf {
-        &self.temp_dir
-    }
-
     fn test_file_path(&self) -> PathBuf {
         let mut path = self.temp_dir.clone();
         path.push("Main.hs");
@@ -168,7 +166,7 @@ impl LanguageHandler for Haskell {
                 .join(",");
 
             let generated_test_case = format!(
-                "  testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})"
+                "  catch (testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})) (\\(_ :: SomeException) -> putStrLn \"r\")"
             );
             generated_test_cases.push(generated_test_case);
         }
@@ -197,7 +195,7 @@ impl LanguageHandler for Haskell {
         }
     }
 
-    async fn run(&self) -> Result<(), SubmissionError> {
+    async fn run(&self) -> Result<String, SubmissionError> {
         info!("compiling solution");
         let solution_file_path = self.solution_file_path();
         let solution_file_str = solution_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
@@ -238,6 +236,7 @@ impl LanguageHandler for Haskell {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .uid(*RESTRICTED_USER_ID)
             .spawn();
         let execution_handle = match execution_process {
             Ok(eh) => eh,
@@ -248,15 +247,22 @@ impl LanguageHandler for Haskell {
         };
 
         info!("starting execution process timeout");
-        if timeout_process(TIMEOUT, execution_handle).await?.is_none() {
-            error!(
-                "execution process exceeded allowed time limit of {:?}",
-                TIMEOUT
-            );
-            return Err(SubmissionError::ExecuteTimeout(TIMEOUT));
-        }
+        match timeout_process(TIMEOUT, execution_handle).await? {
+            Some((es, output)) => {
+                info!(?es);
+                info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+                info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-        Ok(())
+                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+            }
+            None => {
+                error!(
+                    "execution process exceeded allowed time limit of {:?}",
+                    TIMEOUT
+                );
+                Err(SubmissionError::ExecuteTimeout(TIMEOUT))
+            }
+        }
     }
 }
 

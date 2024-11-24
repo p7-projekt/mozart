@@ -29,7 +29,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./docker/haskell
+        file: ./docker/haskell/image.dockerfile
         push: true
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}-haskell:${{ steps.get_tag.outputs.TAG }}

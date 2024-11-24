@@ -8,7 +8,12 @@ use error::SubmissionError;
 use model::Submission;
 use response::SubmissionResult;
 use runner::TestRunner;
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::PathBuf,
+    process::{Command, Stdio},
+    sync::LazyLock,
+};
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info, info_span};
@@ -22,7 +27,40 @@ mod runner;
 mod timeout;
 
 /// The parent directory of all test runner jobs.
-const PARENT_DIR: &str = "/tmp";
+const PARENT_DIR: &str = "/mozart";
+
+/// The user id of the `restricted` user which is applied to solution execution to restrict its
+/// permissions.
+pub static RESTRICTED_USER_ID: LazyLock<u32> = LazyLock::new(|| {
+    /// The name of the linux user that will be restricted from creating files, and therefore used to
+    /// call the solution execution process.
+    const RESTRICTED_USER_NAME: &str = "restricted";
+
+    let id_process = Command::new("id")
+        .args(["-u", RESTRICTED_USER_NAME])
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start process for getting restricted user id");
+
+    let output = id_process
+        .wait_with_output()
+        .expect("failed to wait on process to get restricted user id");
+
+    match String::from_utf8_lossy(&output.stdout).trim().parse() {
+        Ok(id) => id,
+        Err(err) => {
+            error!("failed to parse restricted user id: {}", err);
+            info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            panic!(
+                "could not find user id of restricted user to apply sandbox of solution execution"
+            )
+        }
+    }
+});
 
 /// Defines the routing of mozart.
 ///

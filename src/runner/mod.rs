@@ -1,14 +1,10 @@
 //! Defines the components necessary for the language agnostic test runner to exist.
 
 use crate::{
-    error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
+    error::SubmissionError,
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
 };
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::{fs::File, io::Write, path::PathBuf};
 use tracing::{debug, error, info};
 
 #[cfg(feature = "haskell")]
@@ -19,15 +15,9 @@ mod haskell;
 /// The replacement target for inserting test cases.
 const TEST_CASES_TARGET: &str = "TEST_CASES";
 
-/// The replacement target for inserting the output file path.
-const OUTPUT_FILE_PATH_TARGET: &str = "OUTPUT_FILE_PATH";
-
 pub trait LanguageHandler {
     /// Creates a new `LanguageHandler`.
     fn new(temp_dir: PathBuf) -> Self;
-
-    /// Gets a reference to the temporary working directory of the current `LanguageHandler`.
-    fn dir(&self) -> &PathBuf;
 
     /// Gets the path to the test file, the path should contain the file extension.
     fn test_file_path(&self) -> PathBuf;
@@ -60,7 +50,7 @@ pub trait LanguageHandler {
     /// Runs the submission against the test cases.
     ///
     /// If the programming language is compiled, then this step **also** includes compilation of the source code.
-    async fn run(&self) -> Result<(), SubmissionError>;
+    async fn run(&self) -> Result<String, SubmissionError>;
 }
 
 /// The runner responsible for testing a solution against a set of test cases.
@@ -86,20 +76,6 @@ impl TestRunner {
     /// An `Ok` result indicates that all test cases were passed.
     /// An `Err` result can indicate a number of things specified in the variants of `[SubmissionError]`.
     pub async fn check(self, submission: Submission) -> Result<(), SubmissionError> {
-        // we need to create solution file before writing test runner code, so we might as well
-        // create it at the start of the function
-        info!("creating output file");
-        let mut output_file_path = self.handler.dir().clone();
-        output_file_path.push("output");
-        let mut output_file = match File::create_new(output_file_path.as_path()) {
-            Ok(of) => of,
-            Err(err) => {
-                error!("could not create output file: {}", err);
-                return Err(SubmissionError::Internal);
-            }
-        };
-        let output_file_path_str = output_file_path.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-
         info!("creating solution file");
         let mut solution_file = match File::create(self.handler.solution_file_path()) {
             Ok(tf) => tf,
@@ -125,13 +101,8 @@ impl TestRunner {
             }
         };
 
-        let test_runner_code = self
-            .handler
-            .test_runner_code()
-            .replace(OUTPUT_FILE_PATH_TARGET, output_file_path_str);
-
         info!("writing test runner to file");
-        if let Err(err) = test_runner_file.write_all(test_runner_code.as_bytes()) {
+        if let Err(err) = test_runner_file.write_all(self.handler.test_runner_code().as_bytes()) {
             error!("could not write test runner to file: {}", err);
             return Err(SubmissionError::Internal);
         }
@@ -160,14 +131,7 @@ impl TestRunner {
             return Err(SubmissionError::Internal);
         }
 
-        self.handler.run().await?;
-
-        info!("reading output file");
-        let mut test_output = String::new();
-        if let Err(err) = output_file.read_to_string(&mut test_output) {
-            error!("could not read test output from output file: {}", err);
-        }
-        debug!(?test_output);
+        let test_output = self.handler.run().await?;
 
         let test_case_results =
             TestRunner::parse_test_output(&test_output, &submission.test_cases)?;
@@ -193,12 +157,12 @@ impl TestRunner {
         test_output: &str,
         test_cases: &[TestCase],
     ) -> Result<Box<[TestCaseResult]>, SubmissionError> {
-        info!("parsing output file");
+        info!("parsing test output");
 
-        // if test_output.trim().is_empty() {
-        //     error!("test output file is empty");
-        //     return Err(SubmissionError::Internal);
-        // }
+        if test_output.trim().is_empty() {
+            error!("test output is empty");
+            return Err(SubmissionError::Internal);
+        }
 
         let mut test_case_results = Vec::new();
         for (index, line) in test_output.lines().enumerate() {
@@ -233,6 +197,10 @@ impl TestRunner {
                         }),
                     }
                 }
+                "r" => TestCaseResult {
+                    id: test_case.id,
+                    test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+                },
                 unknown => {
                     error!(
                         "unknown test outcome '{}' for test case '{}'",
@@ -242,31 +210,6 @@ impl TestRunner {
                 }
             };
 
-            test_case_results.push(result);
-        }
-
-        // extrapolating that a testcase caused a runtime error
-        if test_case_results.len() != test_cases.len() {
-            let index = test_case_results.len();
-            let test_case = &test_cases[index];
-            info!(
-                "the submission had a runtime error in test case '{:?}'",
-                test_case
-            );
-            let result = TestCaseResult {
-                id: test_case.id,
-                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
-            };
-            test_case_results.push(result);
-        }
-
-        // handling the remaining test cases which are considered unknown (were not run)
-        for test_case in test_cases.iter().skip(test_case_results.len()) {
-            debug!("test case '{}' is unknown", test_case.id);
-            let result = TestCaseResult {
-                id: test_case.id,
-                test_result: TestResult::Unknown,
-            };
             test_case_results.push(result);
         }
 
@@ -292,6 +235,18 @@ mod parse_output_file {
             input_parameters: Box::new([]),
             output_parameters: Box::new([]),
         }
+    }
+
+    #[test]
+    fn empty_test_output() {
+        let test_output = "";
+        // the parameters are not necessary for this test, only the test case id
+        let test_cases = [empty_test_case(0), empty_test_case(1), empty_test_case(2)];
+        let expected = Err(SubmissionError::Internal);
+
+        let actual = TestRunner::parse_test_output(test_output, &test_cases);
+
+        assert_eq!(actual, expected);
     }
 
     #[test]
@@ -332,7 +287,7 @@ mod parse_output_file {
 
     #[test]
     fn unknown_test_output() {
-        let test_output = ["p", "r"].join("\n");
+        let test_output = ["p", "s"].join("\n");
         // the parameters are not necessary for this test, only the test case id
         let test_cases = [empty_test_case(0), empty_test_case(1)];
         let expected = Err(SubmissionError::Internal);
@@ -344,7 +299,7 @@ mod parse_output_file {
 
     #[test]
     fn runtime_error_in_last_test_case() -> Result<(), SubmissionError> {
-        let test_output = ["p"].join("\n");
+        let test_output = ["p", "r"].join("\n");
         // the parameters are not necessary for this test, only the test case id
         let test_cases = [empty_test_case(0), empty_test_case(1)];
         let expected = Box::new([
@@ -367,7 +322,7 @@ mod parse_output_file {
 
     #[test]
     fn runtime_error_in_first_test_case() -> Result<(), SubmissionError> {
-        let test_output = "";
+        let test_output = ["r", "p", "p", "p", "p"].join("\n");
         let test_cases = [
             empty_test_case(0),
             empty_test_case(1),
@@ -382,23 +337,23 @@ mod parse_output_file {
             },
             TestCaseResult {
                 id: 1,
-                test_result: TestResult::Unknown,
+                test_result: TestResult::Pass,
             },
             TestCaseResult {
                 id: 2,
-                test_result: TestResult::Unknown,
+                test_result: TestResult::Pass,
             },
             TestCaseResult {
                 id: 3,
-                test_result: TestResult::Unknown,
+                test_result: TestResult::Pass,
             },
             TestCaseResult {
                 id: 4,
-                test_result: TestResult::Unknown,
+                test_result: TestResult::Pass,
             },
         ]);
 
-        let actual = TestRunner::parse_test_output(test_output, &test_cases)?;
+        let actual = TestRunner::parse_test_output(&test_output, &test_cases)?;
 
         assert_eq!(*actual, *expected);
 
@@ -573,7 +528,7 @@ mod parse_output_file {
 
     #[test]
     fn mixed_pass_and_failure_with_runtime_error() -> Result<(), SubmissionError> {
-        let test_output = ["p", "f,10,-10", "p"].join("\n");
+        let test_output = ["p", "f,10,-10", "p", "r", "p"].join("\n");
         let test_cases = [
             TestCase {
                 id: 0,
@@ -657,7 +612,7 @@ mod parse_output_file {
             },
             TestCaseResult {
                 id: 4,
-                test_result: TestResult::Unknown,
+                test_result: TestResult::Pass,
             },
         ]);
 
