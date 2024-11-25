@@ -152,7 +152,20 @@ impl LanguageHandler for Python {
                 info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
                 info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                if es.success() {
+                    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+
+                    // We strip the path before the file name as it may confuse the user.
+                    // They are simply shown 'solution.py' instead of '/mozart/{uuid}/solution.py'.
+                    let mut temp_dir = self.temp_dir.clone();
+                    temp_dir.push("");
+                    let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+                    let stripped = stderr.replace(path, "");
+
+                    Err(SubmissionError::Execution(stripped))
+                }
             }
             None => {
                 error!(
