@@ -22,11 +22,6 @@ RUN setfacl -m u:restricted:r-x /usr
 RUN setfacl -m u:restricted:--- / 
 RUN setfacl -m u:restricted:--- /tmp
 RUN setfacl -m u:restricted:--- /var/tmp
-RUN setfacl -m u:restricted:--- /dev/shm
-RUN setfacl -m u:restricted:--- /var/spool/mail
-RUN setfacl -m u:restricted:--- /var/mail
-RUN setfacl -m u:restricted:--- /var/cache
-RUN setfacl -m u:restricted:--- /var/log
 
 ENV PATH="$PATH:/usr/bin/ghc"
 EXPOSE 8080
