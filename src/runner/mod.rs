@@ -235,6 +235,13 @@ impl TestRunner {
     }
 }
 
+/// Removes the instances of the PathBuf p in s.
+fn remove_mozart_path(s: &str, mut p: PathBuf) -> String {
+    p.push("");
+    let path = p.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+    s.replace(path, "")
+}
+
 #[cfg(test)]
 mod parse_output_file {
     use super::TestRunner;
