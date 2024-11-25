@@ -4,7 +4,7 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
-    runner::TIMEOUT,
+    runner::{remove_mozart_path, TIMEOUT},
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
@@ -153,16 +153,13 @@ impl LanguageHandler for Python {
                 info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
                 if es.success() {
-                    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                    let stripped = remove_mozart_path(&stdout, self.temp_dir.clone());
+
+                    Ok(stripped)
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
-
-                    // We strip the path before the file name as it may confuse the user.
-                    // They are simply shown 'solution.py' instead of '/mozart/{uuid}/solution.py'.
-                    let mut temp_dir = self.temp_dir.clone();
-                    temp_dir.push("");
-                    let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-                    let stripped = stderr.replace(path, "");
+                    let stripped = remove_mozart_path(&stderr, self.temp_dir.clone());
 
                     Err(SubmissionError::Execution(stripped))
                 }

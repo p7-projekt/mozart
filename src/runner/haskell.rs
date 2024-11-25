@@ -4,7 +4,7 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
-    runner::TIMEOUT,
+    runner::{remove_mozart_path, TIMEOUT},
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
@@ -86,10 +86,7 @@ impl Haskell {
             1 => {
                 info!("compile error");
                 let stderr = String::from_utf8_lossy(&compile_output.stderr);
-                let mut temp_dir = self.temp_dir.clone();
-                temp_dir.push("");
-                let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-                let stripped = stderr.replace(path, "");
+                let stripped = remove_mozart_path(&stderr, self.temp_dir.clone());
 
                 debug!("compile error: {}", stripped);
                 return Err(SubmissionError::Compilation(stripped));
@@ -245,8 +242,10 @@ impl LanguageHandler for Haskell {
                 info!(?es);
                 info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
                 info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stripped = remove_mozart_path(&stdout, self.temp_dir.clone());
 
-                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                Ok(stripped)
             }
             None => {
                 error!(
