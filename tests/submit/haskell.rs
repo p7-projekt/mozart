@@ -1267,7 +1267,9 @@ async fn runtime_error_in_non_last_test_case() {
         },
         TestCaseResult {
             id: 1,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "divide by zero",
+            ))),
         },
         TestCaseResult {
             id: 2,
@@ -1417,7 +1419,9 @@ async fn mixed_pass_and_fail_with_runtime_error() {
         },
         TestCaseResult {
             id: 4,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "divide by zero",
+            ))),
         },
         TestCaseResult {
             id: 5,

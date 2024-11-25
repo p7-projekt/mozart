@@ -1043,7 +1043,9 @@ async fn runtime_error_in_non_last_test_case() {
         },
         TestCaseResult {
             id: 1,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "division by zero",
+            ))),
         },
         TestCaseResult {
             id: 2,
@@ -1192,7 +1194,9 @@ async fn mixed_pass_and_fail_with_runtime_error() {
         },
         TestCaseResult {
             id: 4,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "division by zero",
+            ))),
         },
         TestCaseResult {
             id: 5,
@@ -1252,7 +1256,9 @@ async fn create_file_in_mozart_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/mozart/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart
@@ -1307,7 +1313,9 @@ async fn create_file_in_tmp_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/tmp/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart
@@ -1362,7 +1370,9 @@ async fn create_file_in_var_tmp_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/var/tmp/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart

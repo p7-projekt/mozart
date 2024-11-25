@@ -110,5 +110,5 @@ pub enum TestCaseFailureReason {
     },
 
     /// A runtime error occured during the test case.
-    RuntimeError,
+    RuntimeError(String),
 }

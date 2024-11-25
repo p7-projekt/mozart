@@ -41,7 +41,7 @@ const PYTHON_EXCEPTION_SNIPPET: &str = r###"
     try:
         TEST_CASE
     except Exception as e:
-        print("r," + str(e))
+        print("r," + str(e).replace('\n', '\\n'))
 "###;
 
 /// The language handler for Python.
