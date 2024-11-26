@@ -4,7 +4,7 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
-    runner::TIMEOUT,
+    runner::{remove_mozart_path, TIMEOUT},
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
@@ -19,6 +19,7 @@ module Main where
 import Solution
 import TestRunner
 import Control.Exception
+import Data.List
 
 main = do
 TEST_CASES
@@ -32,6 +33,14 @@ testChecker actual expected = do
   if actual == expected
     then putStrLn "p"
     else putStrLn ("f" ++ "," ++ show actual ++ "," ++ show expected)
+"###;
+
+/// The exception handling code snippet for Haskell.
+///
+/// The `TEST_CASE` is being replace with a call to the actual test case.
+/// This is done for all test cases.
+const HASKELL_EXCEPTION_SNIPPET: &str = r###"
+  catch (TEST_CASE) (\(e :: SomeException) -> putStrLn ("r" ++ "," ++ intercalate "\\n" (lines (show e))))
 "###;
 
 /// The language handler for Haskell.
@@ -86,10 +95,7 @@ impl Haskell {
             1 => {
                 info!("compile error");
                 let stderr = String::from_utf8_lossy(&compile_output.stderr);
-                let mut temp_dir = self.temp_dir.clone();
-                temp_dir.push("");
-                let path = temp_dir.to_str().expect(UUID_SHOULD_BE_VALID_STR);
-                let stripped = stderr.replace(path, "");
+                let stripped = remove_mozart_path(&stderr, self.temp_dir.clone());
 
                 debug!("compile error: {}", stripped);
                 return Err(SubmissionError::Compilation(stripped));
@@ -158,9 +164,10 @@ impl LanguageHandler for Haskell {
                 .collect::<Vec<String>>()
                 .join(",");
 
-            let generated_test_case = format!(
-                "  catch (testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})) (\\(_ :: SomeException) -> putStrLn \"r\")"
+            let test_case = format!(
+                "testChecker (solution {formatted_input_parameters}) ({formatted_output_parameters})"
             );
+            let generated_test_case = HASKELL_EXCEPTION_SNIPPET.replace("TEST_CASE", &test_case);
             generated_test_cases.push(generated_test_case);
         }
 
@@ -245,8 +252,10 @@ impl LanguageHandler for Haskell {
                 info!(?es);
                 info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
                 info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stripped = remove_mozart_path(&stdout, self.temp_dir.clone());
 
-                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                Ok(stripped)
             }
             None => {
                 error!(

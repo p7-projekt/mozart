@@ -1,7 +1,7 @@
 //! Defines the components necessary for the language agnostic test runner to exist.
 
 use crate::{
-    error::SubmissionError,
+    error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, Submission, TestCase, TestCaseFailureReason, TestCaseResult, TestResult},
 };
 use std::{fs::File, io::Write, path::PathBuf, time::Duration};
@@ -214,10 +214,16 @@ impl TestRunner {
                         }),
                     }
                 }
-                "r" => TestCaseResult {
-                    id: test_case.id,
-                    test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
-                },
+                "r" => {
+                    let error = split.collect::<String>().replace("\\n", "\n");
+
+                    TestCaseResult {
+                        id: test_case.id,
+                        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(
+                            error.to_string(),
+                        )),
+                    }
+                }
                 unknown => {
                     error!(
                         "unknown test outcome '{}' for test case '{}'",
@@ -233,6 +239,13 @@ impl TestRunner {
         debug!(?test_case_results);
         Ok(test_case_results.into_boxed_slice())
     }
+}
+
+/// Removes the instances of the PathBuf p in s.
+fn remove_mozart_path(s: &str, mut p: PathBuf) -> String {
+    p.push("");
+    let path = p.to_str().expect(UUID_SHOULD_BE_VALID_STR);
+    s.replace(path, "")
 }
 
 #[cfg(test)]
@@ -316,7 +329,7 @@ mod parse_output_file {
 
     #[test]
     fn runtime_error_in_last_test_case() -> Result<(), SubmissionError> {
-        let test_output = ["p", "r"].join("\n");
+        let test_output = ["p", "r,did something bad"].join("\n");
         // the parameters are not necessary for this test, only the test case id
         let test_cases = [empty_test_case(0), empty_test_case(1)];
         let expected = Box::new([
@@ -326,7 +339,9 @@ mod parse_output_file {
             },
             TestCaseResult {
                 id: 1,
-                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(
+                    String::from("did something bad"),
+                )),
             },
         ]);
 
@@ -339,7 +354,7 @@ mod parse_output_file {
 
     #[test]
     fn runtime_error_in_first_test_case() -> Result<(), SubmissionError> {
-        let test_output = ["r", "p", "p", "p", "p"].join("\n");
+        let test_output = ["r,not allowed", "p", "p", "p", "p"].join("\n");
         let test_cases = [
             empty_test_case(0),
             empty_test_case(1),
@@ -350,7 +365,9 @@ mod parse_output_file {
         let expected = Box::new([
             TestCaseResult {
                 id: 0,
-                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(
+                    String::from("not allowed"),
+                )),
             },
             TestCaseResult {
                 id: 1,
@@ -545,7 +562,7 @@ mod parse_output_file {
 
     #[test]
     fn mixed_pass_and_failure_with_runtime_error() -> Result<(), SubmissionError> {
-        let test_output = ["p", "f,10,-10", "p", "r", "p"].join("\n");
+        let test_output = ["p", "f,10,-10", "p", "r,bad", "p"].join("\n");
         let test_cases = [
             TestCase {
                 id: 0,
@@ -625,7 +642,9 @@ mod parse_output_file {
             },
             TestCaseResult {
                 id: 3,
-                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+                test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(
+                    String::from("bad"),
+                )),
             },
             TestCaseResult {
                 id: 4,

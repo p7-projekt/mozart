@@ -4,7 +4,7 @@ use super::LanguageHandler;
 use crate::{
     error::{SubmissionError, UUID_SHOULD_BE_VALID_STR},
     model::{Parameter, ParameterType, TestCase},
-    runner::TIMEOUT,
+    runner::{remove_mozart_path, TIMEOUT},
     timeout::timeout_process,
     RESTRICTED_USER_ID,
 };
@@ -41,7 +41,7 @@ const PYTHON_EXCEPTION_SNIPPET: &str = r###"
     try:
         TEST_CASE
     except Exception as e:
-        print("r," + str(e))
+        print("r," + str(e).replace('\n', '\\n'))
 "###;
 
 /// The language handler for Python.
@@ -152,7 +152,17 @@ impl LanguageHandler for Python {
                 info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
                 info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+                if es.success() {
+                    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                    let stripped = remove_mozart_path(&stdout, self.temp_dir.clone());
+
+                    Ok(stripped)
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    let stripped = remove_mozart_path(&stderr, self.temp_dir.clone());
+
+                    Err(SubmissionError::Execution(stripped))
+                }
             }
             None => {
                 error!(

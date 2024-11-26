@@ -1043,7 +1043,9 @@ async fn runtime_error_in_non_last_test_case() {
         },
         TestCaseResult {
             id: 1,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "division by zero",
+            ))),
         },
         TestCaseResult {
             id: 2,
@@ -1192,7 +1194,9 @@ async fn mixed_pass_and_fail_with_runtime_error() {
         },
         TestCaseResult {
             id: 4,
-            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+            test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+                "division by zero",
+            ))),
         },
         TestCaseResult {
             id: 5,
@@ -1252,7 +1256,9 @@ async fn create_file_in_mozart_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/mozart/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart
@@ -1307,7 +1313,9 @@ async fn create_file_in_tmp_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/tmp/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart
@@ -1362,7 +1370,9 @@ async fn create_file_in_var_tmp_directory() {
     let expected_status = StatusCode::OK;
     let expected_body = SubmissionResult::Failure(Box::new([TestCaseResult {
         id: 0,
-        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError),
+        test_result: TestResult::Failure(TestCaseFailureReason::RuntimeError(String::from(
+            "[Errno 13] Permission denied: '/var/tmp/my_file.txt'",
+        ))),
     }]));
 
     let actual = mozart
@@ -1380,4 +1390,58 @@ async fn create_file_in_var_tmp_directory() {
 
     assert_eq!(actual_status, expected_status);
     assert_eq!(actual_body, expected_body);
+}
+
+#[tokio::test]
+async fn syntax_error_in_submission() {
+    let mozart = app();
+    let solution = [
+        "def solution(x: int)", // there is missing a ':' at end of line here
+        "    return x + x",
+    ]
+    .join("\n");
+    let test_cases = Box::new([TestCase {
+        id: 0,
+        input_parameters: Box::new([Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("2"),
+        }]),
+        output_parameters: Box::new([Parameter {
+            value_type: ParameterType::Int,
+            value: String::from("4"),
+        }]),
+    }]);
+    let submission = Submission {
+        solution,
+        test_cases,
+    };
+    let body = serde_json::to_string(&submission).expect("failed to serialize submission");
+    let request = Builder::new()
+        .header("Content-Type", "application/json")
+        .method(Method::POST)
+        .uri("/submit")
+        .body(Body::from(body))
+        .expect("failed to build request");
+    let expected_status = StatusCode::OK;
+
+    let actual = mozart
+        .oneshot(request)
+        .await
+        .expect("failed to execute oneshot request");
+
+    let actual_status = actual.status();
+    let body_bytes = to_bytes(actual.into_body(), usize::MAX)
+        .await
+        .expect("failed to convert body to bytes");
+
+    let actual_body: SubmissionResult =
+        serde_json::from_slice(&body_bytes).expect("failed to deserialize response body");
+
+    assert_eq!(actual_status, expected_status);
+
+    if let SubmissionResult::Error(err) = actual_body {
+        assert!(err.starts_with("an error occured during execution:"));
+    } else {
+        panic!("response body was not of error variant");
+    }
 }

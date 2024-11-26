@@ -45,4 +45,10 @@ pub enum SubmissionError {
     /// This error variant should NOT be stringified, instead it should be converted to a `[SubmissionResult::Failure]`.
     #[error("the submission did not pass all test cases")]
     Failure(Box<[TestCaseResult]>),
+
+    /// The execution process stopped due to an error.
+    ///
+    /// This could be things like syntax errors in interpretted languages.
+    #[error("an error occured during execution: {0}")]
+    Execution(String),
 }
