@@ -1,6 +1,7 @@
 use axum::{
     body::Body,
     http::{Request, StatusCode},
+    middleware::{from_fn, Next},
     routing::{get, post},
     serve, Json, Router,
 };
@@ -70,6 +71,14 @@ pub fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
         .route("/status", get(status))
+        // this prevents client-side cancellation from exiting the request,
+        // which in turn prevents unique working directories from piling up
+        // https://stackoverflow.com/a/78594758
+        .route_layer(from_fn(|req: Request<Body>, next: Next| async move {
+            tokio::task::spawn(next.run(req))
+                .await
+                .expect("should always be able to spawn new task")
+        }))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_: &Request<Body>| {
