@@ -71,14 +71,6 @@ pub fn app() -> Router {
     Router::new()
         .route("/submit", post(submit))
         .route("/status", get(status))
-        // this prevents client-side cancellation from exiting the request,
-        // which in turn prevents unique working directories from piling up
-        // https://stackoverflow.com/a/78594758
-        .route_layer(from_fn(|req: Request<Body>, next: Next| async move {
-            tokio::task::spawn(next.run(req))
-                .await
-                .expect("should always be able to spawn new task")
-        }))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_: &Request<Body>| {
@@ -88,6 +80,14 @@ pub fn app() -> Router {
                 // below prevents tower-http logs for every 5** status code responses
                 .on_failure(()),
         )
+        // this prevents client-side cancellation from exiting the request,
+        // which in turn prevents unique working directories from piling up
+        // https://stackoverflow.com/a/78594758
+        .route_layer(from_fn(|req: Request<Body>, next: Next| async move {
+            tokio::task::spawn(next.run(req))
+                .await
+                .expect("should always be able to spawn new task")
+        }))
 }
 
 /// This functions starts the mozart server and will not return for as long as the server is running.
