@@ -7,7 +7,7 @@ RUN cargo build --locked --release --target=x86_64-unknown-linux-musl --features
 FROM --platform=linux/amd64 alpine:3.20
 COPY --from=build /build/target/x86_64-unknown-linux-musl/release/mozart /bin/mozart
 RUN apk add --no-cache \
-    python3=3.12.7-r0 \
+    python3=3.12.8-r1 \
     musl-dev \
     acl \
     shadow
