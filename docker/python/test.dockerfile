@@ -1,7 +1,7 @@
 FROM --platform=linux/amd64 rust:alpine3.20
 
 RUN apk add --no-cache \
-    python3=3.12.7-r0 \
+    python3=3.12.8-r1 \
     musl-dev \
     shadow \
     acl
