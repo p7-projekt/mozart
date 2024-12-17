@@ -2,6 +2,16 @@ Mozart is a test composer and runner. It is designed to support any language tha
 
 It checks a submitted program against a set of test cases, and reports back the result of this check.
 
+Below you can find a link to each of the published Mozart containers.
+
+<details>
+  <summary>
+    DockerHub links
+  </summary>
+- [Python](https://hub.docker.com/repository/docker/p7project/mozart-python/general)
+- [Haskell](https://hub.docker.com/repository/docker/p7project/mozart-haskell/general)
+</details>
+
 # Why Rust?
 
 Mozart is intended to be deployed inside a linux container and to be as small as possible, so as to not take ressources from the work it is doing.
