@@ -8,8 +8,8 @@ Below you can find a link to each of the published Mozart containers.
   <summary>
     DockerHub links
   </summary>
-- [Python](https://hub.docker.com/repository/docker/p7project/mozart-python/general)
-- [Haskell](https://hub.docker.com/repository/docker/p7project/mozart-haskell/general)
+- <a href="https://hub.docker.com/repository/docker/p7project/mozart-python/general">Python</a>
+- <a href="https://hub.docker.com/repository/docker/p7project/mozart-haskell/general">Haskell</a>
 </details>
 
 # Why Rust?
